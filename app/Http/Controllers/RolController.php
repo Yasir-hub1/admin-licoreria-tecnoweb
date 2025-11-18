@@ -2,63 +2,75 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Rol;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class RolController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $roles = Rol::withCount('usuarios')->paginate(15);
+        return Inertia::render('Admin/Roles/Index', [
+            'roles' => $roles
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        //
+        return Inertia::render('Admin/Roles/Create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'nombre' => 'required|string|max:50|unique:rol',
+            'descripcion' => 'nullable|string|max:200'
+        ]);
+
+        Rol::create($validated);
+
+        return redirect('/admin/roles')
+            ->with('success', 'Rol creado exitosamente');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
-        //
+        $rol = Rol::with('usuarios')->findOrFail($id);
+        return Inertia::render('Admin/Roles/Show', [
+            'rol' => $rol
+        ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
-        //
+        $rol = Rol::findOrFail($id);
+        return Inertia::render('Admin/Roles/Edit', [
+            'rol' => $rol
+        ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
-        //
+        $rol = Rol::findOrFail($id);
+
+        $validated = $request->validate([
+            'nombre' => 'required|string|max:50|unique:rol,nombre,' . $id,
+            'descripcion' => 'nullable|string|max:200'
+        ]);
+
+        $rol->update($validated);
+
+        return redirect('/admin/roles')
+            ->with('success', 'Rol actualizado exitosamente');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
-        //
+        $rol = Rol::findOrFail($id);
+        $rol->delete();
+
+        return redirect('/admin/roles')
+            ->with('success', 'Rol eliminado exitosamente');
     }
 }

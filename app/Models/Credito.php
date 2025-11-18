@@ -31,4 +31,14 @@ class Credito extends Model
     {
         return $this->hasMany(Pagos::class, 'credito_id');
     }
+
+    public function cuotasPendientes()
+    {
+        return $this->pagos()->whereNull('fecha_pago');
+    }
+
+    public function cuotasPagadas()
+    {
+        return $this->pagos()->whereNotNull('fecha_pago');
+    }
 }

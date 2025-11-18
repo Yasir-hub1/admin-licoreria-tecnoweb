@@ -13,7 +13,8 @@ class Compra extends Model
         'nro_compra',
         'descripcion',
         'proveedor_id',
-        'fecha'
+        'fecha',
+        'estado'
     ];
 
     protected $casts = [
@@ -28,5 +29,10 @@ class Compra extends Model
     public function detalles()
     {
         return $this->hasMany(DetalleCompra::class, 'compra_id');
+    }
+
+    public function inventarios()
+    {
+        return $this->hasManyThrough(Inventario::class, DetalleCompra::class, 'compra_id', 'detalle_compra_id');
     }
 }

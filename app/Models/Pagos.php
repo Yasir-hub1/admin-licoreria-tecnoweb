@@ -11,6 +11,7 @@ class Pagos extends Model
 
     protected $fillable = [
         'credito_id',
+        'numero_cuota',
         'fecha_pago',
         'monto',
         'metodo',

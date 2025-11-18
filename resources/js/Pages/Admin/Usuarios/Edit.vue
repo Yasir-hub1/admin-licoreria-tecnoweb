@@ -1,0 +1,41 @@
+<template>
+    <MainLayout>
+        <div class="container mx-auto px-4 py-8">
+            <h1 class="text-3xl font-bold mb-6">Editar Usuario</h1>
+            <form @submit.prevent="submit" class="bg-white shadow rounded-lg p-6 max-w-md">
+                <div class="mb-4"><label class="block text-gray-700 font-bold mb-2">Nombre *</label>
+                    <input v-model="form.nombre" type="text" class="w-full px-3 py-2 border rounded-lg" required />
+                </div>
+                <div class="mb-4"><label class="block text-gray-700 font-bold mb-2">Email *</label>
+                    <input v-model="form.email" type="email" class="w-full px-3 py-2 border rounded-lg" required />
+                </div>
+                <div class="mb-4"><label class="block text-gray-700 font-bold mb-2">Nueva Contraseña (dejar vacío para mantener)</label>
+                    <input v-model="form.password" type="password" class="w-full px-3 py-2 border rounded-lg" />
+                </div>
+                <div class="mb-4"><label class="block text-gray-700 font-bold mb-2">Rol *</label>
+                    <select v-model="form.id_rol" class="w-full px-3 py-2 border rounded-lg" required>
+                        <option v-for="rol in roles" :key="rol.id" :value="rol.id">{{ rol.nombre }}</option>
+                    </select>
+                </div>
+                <div class="mb-4"><label class="block text-gray-700 font-bold mb-2">Estado *</label>
+                    <select v-model="form.estado" class="w-full px-3 py-2 border rounded-lg" required>
+                        <option value="activo">Activo</option>
+                        <option value="inactivo">Inactivo</option>
+                    </select>
+                </div>
+                <div class="flex gap-4">
+                    <button type="submit" :disabled="form.processing" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded">Actualizar</button>
+                    <Link href="/admin/usuarios" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium">Cancelar</Link>
+                </div>
+            </form>
+        </div>
+    </MainLayout>
+</template>
+<script setup>
+import { useForm, Link } from '@inertiajs/vue3';
+import MainLayout from '@/Layouts/MainLayout.vue';
+const props = defineProps({ usuario: Object, roles: Array });
+const form = useForm({ nombre: props.usuario.nombre, email: props.usuario.email, password: '', id_rol: props.usuario.id_rol, estado: props.usuario.estado });
+const submit = () => form.put(`/admin/usuarios/${props.usuario.id}`);
+</script>
+

@@ -14,8 +14,16 @@ class Cliente extends Model
         'nombre',
         'telefono',
         'direccion',
-        'estado'
+        'estado',
+        'usuario_id',
+        'credito_aprobado',
+        'limite_credito'
     ];
+
+    public function usuario()
+    {
+        return $this->belongsTo(Usuario::class, 'usuario_id');
+    }
 
     public function ventas()
     {

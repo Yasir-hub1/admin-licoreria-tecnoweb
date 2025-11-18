@@ -16,7 +16,9 @@ class Inventario extends Model
         'stock_actual',
         'glosa',
         'usuario_id',
-        'detalle_compra_id'
+        'detalle_compra_id',
+        'detalle_venta_id',
+        'producto_id'
     ];
 
     protected $casts = [
@@ -31,5 +33,15 @@ class Inventario extends Model
     public function detalleCompra()
     {
         return $this->belongsTo(DetalleCompra::class, 'detalle_compra_id');
+    }
+
+    public function detalleVenta()
+    {
+        return $this->belongsTo(DetalleVenta::class, 'detalle_venta_id');
+    }
+
+    public function producto()
+    {
+        return $this->belongsTo(Producto::class, 'producto_id');
     }
 }

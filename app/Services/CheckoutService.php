@@ -1,0 +1,149 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Venta;
+use App\Models\DetalleVenta;
+use App\Models\Credito;
+use App\Models\Cliente;
+use App\Models\Inventario;
+use App\Services\InventoryService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+
+class CheckoutService
+{
+    protected $inventoryService;
+
+    public function __construct(InventoryService $inventoryService)
+    {
+        $this->inventoryService = $inventoryService;
+    }
+
+    public function processContado($cart, $cliente)
+    {
+        return DB::transaction(function () use ($cart, $cliente) {
+            // Crear venta
+            $venta = Venta::create([
+                'nro_venta' => $this->generateNroVenta(),
+                'fecha' => now(),
+                'tipo' => 'contado',
+                'monto_total' => $cart['total'],
+                'saldo' => 0,
+                'numero_cuotas' => 0,
+                'estado' => 'completado',
+                'cliente_id' => $cliente->id,
+                'vendedor_id' => null
+            ]);
+
+            // Crear detalles de venta
+            foreach ($cart['items'] as $item) {
+                $detalle = DetalleVenta::create([
+                    'venta_id' => $venta->id,
+                    'producto_id' => $item['id'],
+                    'cantidad' => $item['cantidad'],
+                    'precio_unitario' => $item['precio'],
+                    'subtotal' => $item['precio'] * $item['cantidad']
+                ]);
+
+                // Registrar movimiento de inventario (salida)
+                $this->inventoryService->registrarMovimiento([
+                    'tipo_movimiento' => 'SALIDA',
+                    'cantidad' => $item['cantidad'],
+                    'fecha' => now(),
+                    'glosa' => "Venta #{$venta->nro_venta} a Cliente {$cliente->nombre}",
+                    'producto_id' => $item['id'],
+                    'detalle_venta_id' => $detalle->id
+                ]);
+            }
+
+            return $venta;
+        });
+    }
+
+    public function processCredito($cart, $cliente, $cuotas = 2)
+    {
+        return DB::transaction(function () use ($cart, $cliente, $cuotas) {
+            // Validar elegibilidad
+            if (!$this->validateCreditEligibility($cliente)) {
+                throw new \Exception('El cliente no es elegible para crédito');
+            }
+
+            // Crear venta
+            $venta = Venta::create([
+                'nro_venta' => $this->generateNroVenta(),
+                'fecha' => now(),
+                'tipo' => 'credito',
+                'monto_total' => $cart['total'],
+                'saldo' => $cart['total'],
+                'numero_cuotas' => $cuotas,
+                'estado' => 'pendiente',
+                'cliente_id' => $cliente->id,
+                'vendedor_id' => null
+            ]);
+
+            // Crear detalles de venta
+            foreach ($cart['items'] as $item) {
+                $detalle = DetalleVenta::create([
+                    'venta_id' => $venta->id,
+                    'producto_id' => $item['id'],
+                    'cantidad' => $item['cantidad'],
+                    'precio_unitario' => $item['precio'],
+                    'subtotal' => $item['precio'] * $item['cantidad']
+                ]);
+
+                // Registrar movimiento de inventario (salida)
+                $this->inventoryService->registrarMovimiento([
+                    'tipo_movimiento' => 'SALIDA',
+                    'cantidad' => $item['cantidad'],
+                    'fecha' => now(),
+                    'glosa' => "Venta #{$venta->nro_venta} a Crédito - Cliente {$cliente->nombre}",
+                    'producto_id' => $item['id'],
+                    'detalle_venta_id' => $detalle->id
+                ]);
+            }
+
+            // Crear crédito usando CreditService
+            $creditService = app(\App\Services\CreditService::class);
+            $credito = $creditService->createCredit($venta, $cuotas);
+
+            return ['venta' => $venta, 'credito' => $credito];
+        });
+    }
+
+    public function validateCreditEligibility($cliente)
+    {
+        // Verificar si tiene crédito aprobado
+        if (!$cliente->credito_aprobado) {
+            return false;
+        }
+
+        // Verificar si tiene créditos activos en mora
+        $creditosMora = Credito::whereHas('venta', function($q) use ($cliente) {
+            $q->where('cliente_id', $cliente->id);
+        })->where('estado', 'mora')->exists();
+
+        if ($creditosMora) {
+            return false;
+        }
+
+        // Verificar límite de crédito
+        $creditosActivos = Credito::whereHas('venta', function($q) use ($cliente) {
+            $q->where('cliente_id', $cliente->id);
+        })->where('estado', 'activo')->sum('saldo');
+
+        if ($creditosActivos >= $cliente->limite_credito) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function generateNroVenta()
+    {
+        $ultimaVenta = Venta::orderBy('id', 'desc')->first();
+        $numero = $ultimaVenta ? (int)str_replace('V-', '', $ultimaVenta->nro_venta) + 1 : 1;
+        return 'V-' . str_pad($numero, 6, '0', STR_PAD_LEFT);
+    }
+}
+

@@ -32,7 +32,12 @@ class Venta extends Model
 
     public function vendedor()
     {
-        return $this->belongsTo(Vendedor::class, 'vendedor_id');
+        return $this->belongsTo(Empleado::class, 'vendedor_id');
+    }
+
+    public function empleado()
+    {
+        return $this->belongsTo(Empleado::class, 'vendedor_id');
     }
 
     public function detalles()
@@ -43,5 +48,10 @@ class Venta extends Model
     public function credito()
     {
         return $this->hasOne(Credito::class, 'venta_id');
+    }
+
+    public function inventarios()
+    {
+        return $this->hasManyThrough(Inventario::class, DetalleVenta::class, 'venta_id', 'detalle_venta_id');
     }
 }
