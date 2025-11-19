@@ -104,10 +104,9 @@ class VentaController extends Controller
                 $total += $detalle['cantidad'] * $detalle['precio_unitario'];
             }
 
-            // Generar número de venta
-            $ultimaVenta = Venta::orderBy('id', 'desc')->first();
-            $numero = $ultimaVenta ? (int)str_replace('V-', '', $ultimaVenta->nro_venta) + 1 : 1;
-            $nroVenta = 'V-' . str_pad($numero, 6, '0', STR_PAD_LEFT);
+            // Generar número de venta usando CounterService
+            $counterService = app(\App\Services\CounterService::class);
+            $nroVenta = $counterService->obtenerSiguienteVenta();
 
             $cliente = Cliente::findOrFail($validated['cliente_id']);
 

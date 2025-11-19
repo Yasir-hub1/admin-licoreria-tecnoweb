@@ -1,9 +1,9 @@
 <template>
-    <MainLayout>
+    <AdminLayout>
         <div class="container mx-auto px-4 py-8">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold">Usuarios del Sistema</h1>
-                <Link href="/admin/usuarios/create" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
+                <Link v-if="puedeCrear" href="/admin/usuarios/create" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
                     ➕ Nuevo Usuario
                 </Link>
             </div>
@@ -30,21 +30,31 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                <Link :href="`/admin/usuarios/${usuario.id}`" class="text-blue-600 hover:text-blue-900">Ver</Link>
-                                <Link :href="`/admin/usuarios/${usuario.id}/edit`" class="text-indigo-600 hover:text-indigo-900">Editar</Link>
-                                <button @click="deleteItem(usuario.id)" class="text-red-600 hover:text-red-900">Eliminar</button>
+                                <Link v-if="puedeVer" :href="`/admin/usuarios/${usuario.id}`" class="text-blue-600 hover:text-blue-900">Ver</Link>
+                                <Link v-if="puedeEditar" :href="`/admin/usuarios/${usuario.id}/edit`" class="text-indigo-600 hover:text-indigo-900">Editar</Link>
+                                <button v-if="puedeEliminar" @click="deleteItem(usuario.id)" class="text-red-600 hover:text-red-900">Eliminar</button>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
 <script setup>
 import { Link, router } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
+import { usePermissions } from '@/composables/usePermissions';
+
 defineProps({ usuarios: Object });
+
+const { tienePermiso } = usePermissions();
+
+const puedeCrear = tienePermiso('usuarios.crear');
+const puedeVer = tienePermiso('usuarios.ver');
+const puedeEditar = tienePermiso('usuarios.editar');
+const puedeEliminar = tienePermiso('usuarios.eliminar');
+
 const deleteItem = (id) => {
     if(confirm('¿Está seguro de eliminar este usuario?')) {
         router.delete(`/admin/usuarios/${id}`);

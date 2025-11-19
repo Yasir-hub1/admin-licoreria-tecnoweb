@@ -49,102 +49,111 @@
                 <form @submit.prevent="submit" class="bg-white shadow rounded-lg p-6">
                     <h2 class="text-xl font-semibold mb-4">Método de Pago</h2>
 
-                    <!-- Opción Contado -->
-                    <div class="mb-6">
-                        <label class="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50"
-                            :class="form.tipo_pago === 'contado' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'">
-                            <input
-                                v-model="form.tipo_pago"
-                                type="radio"
-                                value="contado"
-                                class="mr-3"
-                            />
-                            <div class="flex-1">
-                                <div class="font-semibold text-lg">Pago al Contado</div>
-                                <div class="text-sm text-gray-600">Pago inmediato completo</div>
-                            </div>
-                        </label>
+                    <RadioInput
+                        v-model="form.tipo_pago"
+                        label="Tipo de Pago"
+                        name="tipo_pago"
+                        :options="tipoPagoOptions"
+                        option-value="value"
+                        option-label="label"
+                        option-description="description"
+                        required
+                    />
+
+                    <!-- Opciones de cuotas dinámicas -->
+                    <div v-if="form.tipo_pago === 'credito' && opcionesCredito.length > 0" class="mt-4 ml-8">
+                        <SelectInput
+                            v-model="form.numero_cuotas"
+                            label="Número de Cuotas"
+                            name="numero_cuotas"
+                            placeholder="Seleccione cuotas"
+                            required
+                            :options="opcionesCredito.map(cuota => ({
+                                value: cuota,
+                                label: `${cuota} cuota${cuota > 1 ? 's' : ''} - Bs. ${(cart.total / cuota).toFixed(2)} c/u`
+                            }))"
+                            option-value="value"
+                            option-label="label"
+                            hint="Cuota mensual: Bs. {{ form.numero_cuotas ? (cart.total / form.numero_cuotas).toFixed(2) : '0.00' }}"
+                        />
                     </div>
 
-                    <!-- Opción Crédito -->
-                    <div v-if="puedeCredito" class="mb-6">
-                        <label class="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50"
-                            :class="form.tipo_pago === 'credito' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'">
-                            <input
-                                v-model="form.tipo_pago"
-                                type="radio"
-                                value="credito"
-                                class="mr-3"
-                            />
-                            <div class="flex-1">
-                                <div class="font-semibold text-lg">Pago a Crédito</div>
-                                <div class="text-sm text-gray-600">
-                                    Crédito disponible: Bs. {{ cliente?.limite_credito || 0 }}
-                                </div>
-                            </div>
-                        </label>
-
-                        <!-- Opciones de cuotas dinámicas -->
-                        <div v-if="form.tipo_pago === 'credito' && opcionesCredito.length > 0" class="mt-4 ml-8">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Número de Cuotas:
-                            </label>
-                            <select
-                                v-model="form.numero_cuotas"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                                required
-                            >
-                                <option value="">Seleccione cuotas</option>
-                                <option v-for="cuota in opcionesCredito" :key="cuota" :value="cuota">
-                                    {{ cuota }} cuota{{ cuota > 1 ? 's' : '' }} -
-                                    Bs. {{ (cart.total / cuota).toFixed(2) }} c/u
-                                </option>
-                            </select>
-                            <p class="text-xs text-gray-500 mt-1">
-                                Cuota mensual: Bs. {{ form.numero_cuotas ? (cart.total / form.numero_cuotas).toFixed(2) : '0.00' }}
+                    <div v-else-if="form.tipo_pago === 'credito'" class="mb-6 ml-8 p-4 rounded-lg border"
+                         :class="{
+                             'bg-yellow-50 border-yellow-200': !cliente.tieneDocumentosCompletos || cliente.estado_verificacion === 'pendiente',
+                             'bg-blue-50 border-blue-200': cliente.estado_verificacion === 'en_revision',
+                             'bg-red-50 border-red-200': cliente.estado_verificacion === 'rechazado'
+                         }">
+                        <div v-if="!cliente.tieneDocumentosCompletos || !cliente.estado_verificacion || cliente.estado_verificacion === 'pendiente'" class="space-y-2">
+                            <p class="text-sm font-semibold text-yellow-800">
+                                📋 Documentos Pendientes
                             </p>
+                            <p class="text-sm text-yellow-700">
+                                Para realizar compras a crédito, primero debes subir y verificar tus documentos.
+                            </p>
+                            <Link href="/verificar-credito" class="inline-block mt-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm font-medium transition-colors">
+                                Subir Documentos
+                            </Link>
+                        </div>
+                        <div v-else-if="cliente.estado_verificacion === 'en_revision'" class="space-y-2">
+                            <p class="text-sm font-semibold text-blue-800">
+                                ⏳ En Revisión
+                            </p>
+                            <p class="text-sm text-blue-700">
+                                Tus documentos están siendo revisados por un administrador. Te notificaremos cuando se complete la revisión.
+                            </p>
+                        </div>
+                        <div v-else-if="cliente.estado_verificacion === 'rechazado'" class="space-y-2">
+                            <p class="text-sm font-semibold text-red-800">
+                                ❌ Solicitud Rechazada
+                            </p>
+                            <p class="text-sm text-red-700" v-if="cliente.observaciones_verificacion">
+                                {{ cliente.observaciones_verificacion }}
+                            </p>
+                            <p class="text-sm text-red-700" v-else>
+                                Tu solicitud de crédito fue rechazada. Contacta al administrador para más información.
+                            </p>
+                            <Link href="/verificar-credito" class="inline-block mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors">
+                                Actualizar Documentos
+                            </Link>
                         </div>
                     </div>
 
-                    <div v-else-if="form.tipo_pago === 'credito'" class="mb-6 ml-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p class="text-sm text-yellow-800">
-                            No eres elegible para compra a crédito. Contacta al administrador para aprobar tu crédito.
-                        </p>
-                    </div>
-
                     <!-- Método de pago -->
-                    <div class="mb-6">
-                        <label class="block text-gray-700 font-bold mb-2">Método de Pago *</label>
-                        <select
-                            v-model="form.metodo_pago"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                            required
-                        >
-                            <option value="">Seleccione método</option>
-                            <option value="efectivo">Efectivo</option>
-                            <option value="tarjeta">Tarjeta</option>
-                            <option value="qr">QR / Transferencia</option>
-                            <option value="cheque">Cheque</option>
-                        </select>
-                        <span v-if="form.errors.metodo_pago" class="text-red-500 text-sm">{{ form.errors.metodo_pago }}</span>
-                    </div>
+                    <SelectInput
+                        v-model="form.metodo_pago"
+                        label="Método de Pago"
+                        name="metodo_pago"
+                        placeholder="Seleccione método"
+                        required
+                        :error="form.errors.metodo_pago"
+                        :options="metodoPagoOptions"
+                        option-value="value"
+                        option-label="label"
+                    />
 
                     <!-- Botones -->
-                    <div class="flex gap-4">
-                        <Link
-                            href="/cart"
-                            class="flex-1 text-center bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                        >
-                            Volver al Carrito
+                    <div class="flex gap-4 pt-4">
+                        <Link href="/cart" class="flex-1">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                full-width
+                                size="lg"
+                            >
+                                Volver al Carrito
+                            </Button>
                         </Link>
-                        <button
+                        <Button
                             type="submit"
+                            :loading="form.processing"
                             :disabled="form.processing || (form.tipo_pago === 'credito' && !form.numero_cuotas)"
-                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            variant="primary"
+                            full-width
+                            size="lg"
                         >
-                            <span v-if="form.processing">Procesando...</span>
-                            <span v-else>Confirmar Compra</span>
-                        </button>
+                            Confirmar Compra
+                        </Button>
                     </div>
                 </form>
             </div>
@@ -165,13 +174,50 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useForm, Link } from '@inertiajs/vue3';
 import ShopLayout from '@/Layouts/ShopLayout.vue';
+import SelectInput from '@/Components/Form/SelectInput.vue';
+import RadioInput from '@/Components/Form/RadioInput.vue';
+import Button from '@/Components/Button.vue';
+
+const metodoPagoOptions = [
+    { value: 'efectivo', label: 'Efectivo' },
+    { value: 'tarjeta', label: 'Tarjeta' },
+    { value: 'qr', label: 'QR / Transferencia' },
+    { value: 'cheque', label: 'Cheque' }
+];
+
+const tipoPagoOptions = computed(() => {
+    const options = [
+        {
+            value: 'contado',
+            label: 'Pago al Contado',
+            description: 'Pago inmediato completo'
+        }
+    ];
+
+    if (props.puedeCredito) {
+        options.push({
+            value: 'credito',
+            label: 'Pago a Crédito',
+            description: `Crédito disponible: Bs. ${props.cliente?.limite_credito || 0}`
+        });
+    }
+
+    return options;
+});
 
 const props = defineProps({
     cart: Object,
-    cliente: Object,
+    cliente: {
+        type: Object,
+        default: () => ({
+            tieneDocumentosCompletos: false,
+            estado_verificacion: null,
+            observaciones_verificacion: null
+        })
+    },
     puedeCredito: Boolean,
     opcionesCredito: {
         type: Array,

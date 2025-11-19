@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Rol;
+use App\Models\Permiso;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -10,7 +11,7 @@ class RolController extends Controller
 {
     public function index()
     {
-        $roles = Rol::withCount('usuarios')->paginate(15);
+        $roles = Rol::withCount(['usuarios', 'permisos'])->paginate(15);
         return Inertia::render('Admin/Roles/Index', [
             'roles' => $roles
         ]);
@@ -18,17 +19,30 @@ class RolController extends Controller
 
     public function create()
     {
-        return Inertia::render('Admin/Roles/Create');
+        $permisos = Permiso::orderBy('modulo')->orderBy('nombre')->get()->groupBy('modulo');
+        return Inertia::render('Admin/Roles/Create', [
+            'permisos' => $permisos
+        ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:50|unique:rol',
-            'descripcion' => 'nullable|string|max:200'
+            'descripcion' => 'nullable|string|max:200',
+            'permisos' => 'nullable|array',
+            'permisos.*' => 'exists:permiso,id'
         ]);
 
-        Rol::create($validated);
+        $rol = Rol::create([
+            'nombre' => $validated['nombre'],
+            'descripcion' => $validated['descripcion'] ?? null
+        ]);
+
+        // Sincronizar permisos si se proporcionaron
+        if (isset($validated['permisos'])) {
+            $rol->sincronizarPermisos($validated['permisos']);
+        }
 
         return redirect('/admin/roles')
             ->with('success', 'Rol creado exitosamente');
@@ -36,7 +50,7 @@ class RolController extends Controller
 
     public function show(string $id)
     {
-        $rol = Rol::with('usuarios')->findOrFail($id);
+        $rol = Rol::with(['usuarios', 'permisos'])->findOrFail($id);
         return Inertia::render('Admin/Roles/Show', [
             'rol' => $rol
         ]);
@@ -44,9 +58,13 @@ class RolController extends Controller
 
     public function edit(string $id)
     {
-        $rol = Rol::findOrFail($id);
+        $rol = Rol::with('permisos')->findOrFail($id);
+        $permisos = Permiso::orderBy('modulo')->orderBy('nombre')->get()->groupBy('modulo');
+
         return Inertia::render('Admin/Roles/Edit', [
-            'rol' => $rol
+            'rol' => $rol,
+            'permisos' => $permisos,
+            'permisosSeleccionados' => $rol->permisos->pluck('id')->toArray()
         ]);
     }
 
@@ -56,10 +74,19 @@ class RolController extends Controller
 
         $validated = $request->validate([
             'nombre' => 'required|string|max:50|unique:rol,nombre,' . $id,
-            'descripcion' => 'nullable|string|max:200'
+            'descripcion' => 'nullable|string|max:200',
+            'permisos' => 'nullable|array',
+            'permisos.*' => 'exists:permiso,id'
         ]);
 
-        $rol->update($validated);
+        $rol->update([
+            'nombre' => $validated['nombre'],
+            'descripcion' => $validated['descripcion'] ?? null
+        ]);
+
+        // Sincronizar permisos
+        $permisosIds = $validated['permisos'] ?? [];
+        $rol->sincronizarPermisos($permisosIds);
 
         return redirect('/admin/roles')
             ->with('success', 'Rol actualizado exitosamente');
@@ -68,6 +95,13 @@ class RolController extends Controller
     public function destroy(string $id)
     {
         $rol = Rol::findOrFail($id);
+
+        // Verificar si hay usuarios con este rol
+        if ($rol->usuarios()->count() > 0) {
+            return redirect('/admin/roles')
+                ->with('error', 'No se puede eliminar el rol porque tiene usuarios asignados');
+        }
+
         $rol->delete();
 
         return redirect('/admin/roles')

@@ -6,10 +6,12 @@ use App\Models\Categoria;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-class CategoriaController extends Controller
+class CategoriaController extends BaseController
 {
     public function index()
     {
+        $this->verificarPermiso('categorias.listar');
+
         $categorias = Categoria::withCount('productos')->paginate(15);
         return Inertia::render('Admin/Categorias/Index', [
             'categorias' => $categorias
@@ -18,11 +20,14 @@ class CategoriaController extends Controller
 
     public function create()
     {
+        $this->verificarPermiso('categorias.crear');
+
         return Inertia::render('Admin/Categorias/Create');
     }
 
     public function store(Request $request)
     {
+        $this->verificarPermiso('categorias.crear');
         $validated = $request->validate([
             'nombre' => 'required|string|max:100|unique:categoria'
         ]);
@@ -35,6 +40,8 @@ class CategoriaController extends Controller
 
     public function show(string $id)
     {
+        $this->verificarPermiso('categorias.ver');
+
         $categoria = Categoria::with('productos')->findOrFail($id);
         return Inertia::render('Admin/Categorias/Show', [
             'categoria' => $categoria
@@ -43,6 +50,8 @@ class CategoriaController extends Controller
 
     public function edit(string $id)
     {
+        $this->verificarPermiso('categorias.editar');
+
         $categoria = Categoria::findOrFail($id);
         return Inertia::render('Admin/Categorias/Edit', [
             'categoria' => $categoria
@@ -51,6 +60,8 @@ class CategoriaController extends Controller
 
     public function update(Request $request, string $id)
     {
+        $this->verificarPermiso('categorias.editar');
+
         $categoria = Categoria::findOrFail($id);
 
         $validated = $request->validate([
@@ -65,6 +76,8 @@ class CategoriaController extends Controller
 
     public function destroy(string $id)
     {
+        $this->verificarPermiso('categorias.eliminar');
+
         $categoria = Categoria::findOrFail($id);
         $categoria->delete();
 

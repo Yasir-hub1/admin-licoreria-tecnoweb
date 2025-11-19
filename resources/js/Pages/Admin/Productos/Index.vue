@@ -1,10 +1,14 @@
 <template>
-    <MainLayout>
-        <div class="container mx-auto px-4 py-8">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-3xl font-bold">Productos</h1>
-                <Link href="/admin/productos/create" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
-                    ➕ Nuevo Producto
+    <AdminLayout title="Productos" subtitle="Gestiona el catálogo de productos">
+        <div class="space-y-6">
+            <div class="flex justify-between items-center" v-if="puedeCrear">
+                <Link href="/admin/productos/create">
+                    <Button variant="primary" size="md">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Nuevo Producto
+                    </Button>
                 </Link>
             </div>
 
@@ -32,9 +36,9 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm">Bs. {{ Number(producto.precio).toFixed(2) }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">{{ producto.marca || '-' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                <Link :href="`/admin/productos/${producto.id}`" class="text-blue-600 hover:text-blue-900">Ver</Link>
-                                <Link :href="`/admin/productos/${producto.id}/edit`" class="text-indigo-600 hover:text-indigo-900">Editar</Link>
-                                <button @click="deleteProducto(producto.id)" class="text-red-600 hover:text-red-900">Eliminar</button>
+                                <Link v-if="puedeVer" :href="`/admin/productos/${producto.id}`" class="text-blue-600 hover:text-blue-900">Ver</Link>
+                                <Link v-if="puedeEditar" :href="`/admin/productos/${producto.id}/edit`" class="text-indigo-600 hover:text-indigo-900">Editar</Link>
+                                <button v-if="puedeEliminar" @click="deleteProducto(producto.id)" class="text-red-600 hover:text-red-900">Eliminar</button>
                             </td>
                         </tr>
                     </tbody>
@@ -56,16 +60,25 @@
                 </nav>
             </div>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
 
 <script setup>
 import { Link, router } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
+import Button from '@/Components/Button.vue';
+import { usePermissions } from '@/composables/usePermissions';
 
 defineProps({
     productos: Object
 });
+
+const { tienePermiso } = usePermissions();
+
+const puedeCrear = tienePermiso('productos.crear');
+const puedeVer = tienePermiso('productos.ver');
+const puedeEditar = tienePermiso('productos.editar');
+const puedeEliminar = tienePermiso('productos.eliminar');
 
 const deleteProducto = (id) => {
     if (confirm('¿Está seguro de eliminar este producto?')) {

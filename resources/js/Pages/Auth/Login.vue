@@ -1,51 +1,75 @@
 <template>
-    <div class="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div class="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-            <h2 class="text-2xl font-bold text-center mb-6">Iniciar Sesión</h2>
-
-            <div v-if="$page.props.flash?.error" class="mb-4 p-3 bg-red-100 text-red-700 rounded">
-                {{ $page.props.flash.error }}
+    <div class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+        <div
+            v-motion-fade
+            class="max-w-md w-full bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-gray-100"
+        >
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                    Iniciar Sesión
+                </h2>
+                <p class="text-gray-600 text-sm">Bienvenido de nuevo</p>
             </div>
 
-            <form @submit.prevent="submit">
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
-                    <input
-                        v-model="form.email"
-                        type="email"
-                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-                        required
-                    />
-                    <span v-if="form.errors.email" class="text-red-500 text-sm">{{ form.errors.email }}</span>
+            <Transition
+                enter-active-class="transition ease-out duration-300"
+                enter-from-class="transform opacity-0 scale-95"
+                enter-to-class="transform opacity-100 scale-100"
+            >
+                <div v-if="$page.props.flash?.error" class="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center gap-2">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>{{ $page.props.flash.error }}</span>
                 </div>
+            </Transition>
 
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Contraseña</label>
-                    <input
+            <form @submit.prevent="submit" class="space-y-5">
+                <TextInput
+                    v-model="form.email"
+                    label="Email"
+                    type="email"
+                    name="email"
+                    placeholder="tu@email.com"
+                    required
+                    :error="form.errors.email"
+                    :validation-rules="[validateEmail]"
+                />
+
+                <div>
+                    <TextInput
                         v-model="form.password"
+                        label="Contraseña"
                         type="password"
-                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+                        name="password"
+                        placeholder="••••••••"
                         required
+                        :error="form.errors.password"
+                        :min-length="6"
+                        hint="Mínimo 6 caracteres"
                     />
-                    <span v-if="form.errors.password" class="text-red-500 text-sm">{{ form.errors.password }}</span>
                 </div>
 
-                <div class="mb-4 flex items-center">
-                    <input v-model="form.remember" type="checkbox" class="mr-2" />
-                    <label class="text-sm text-gray-700">Recordarme</label>
-                </div>
+                <CheckboxInput
+                    v-model="form.remember"
+                    label="Recordarme"
+                />
 
-                <button
+                <Button
                     type="submit"
+                    :loading="form.processing"
                     :disabled="form.processing"
-                    class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                    variant="primary"
+                    full-width
+                    size="lg"
+                    class="w-full"
                 >
                     Iniciar Sesión
-                </button>
+                </Button>
 
-                <div class="mt-4 text-center">
-                    <Link href="/register" class="text-blue-500 hover:underline">
-                        ¿No tienes cuenta? Regístrate
+                <div class="mt-6 text-center">
+                    <Link href="/register" class="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200">
+                        ¿No tienes cuenta? <span class="underline">Regístrate</span>
                     </Link>
                 </div>
             </form>
@@ -54,13 +78,22 @@
 </template>
 
 <script setup>
-import { useForm, Link, router } from '@inertiajs/vue3';
+import { useForm, Link } from '@inertiajs/vue3';
+import TextInput from '@/Components/Form/TextInput.vue';
+import CheckboxInput from '@/Components/Form/CheckboxInput.vue';
+import Button from '@/Components/Button.vue';
 
 const form = useForm({
     email: '',
     password: '',
     remember: false,
 });
+
+const validateEmail = (value) => {
+    if (!value) return true;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(value) || 'Email inválido';
+};
 
 const submit = () => {
     form.post('/login');

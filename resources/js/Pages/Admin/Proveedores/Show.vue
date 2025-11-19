@@ -1,10 +1,10 @@
 <template>
-    <MainLayout>
+    <AdminLayout>
         <div class="container mx-auto px-4 py-8">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold">Detalle del Proveedor</h1>
                 <div class="space-x-2">
-                    <Link :href="`/admin/proveedores/${proveedor.id}/edit`" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
+                    <Link v-if="puedeEditar" :href="`/admin/proveedores/${proveedor.id}/edit`" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
                         Editar
                     </Link>
                     <Link href="/admin/proveedores" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium">
@@ -59,9 +59,10 @@
                                     Bs. {{ Number(compra.total).toFixed(2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <Link :href="`/admin/compras/${compra.id}`" class="text-blue-600 hover:text-blue-900">
+                                    <Link v-if="puedeVerCompras" :href="`/admin/compras/${compra.id}`" class="text-blue-600 hover:text-blue-900">
                                         Ver Detalle
                                     </Link>
+                                    <span v-else class="text-gray-400">-</span>
                                 </td>
                             </tr>
                         </tbody>
@@ -73,15 +74,21 @@
                 <p class="text-gray-500 text-center">Este proveedor no tiene compras registradas</p>
             </div>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
 
 <script setup>
 import { Link } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
+import { usePermissions } from '@/composables/usePermissions';
 
 defineProps({
     proveedor: Object
 });
+
+const { tienePermiso } = usePermissions();
+
+const puedeEditar = tienePermiso('proveedores.editar');
+const puedeVerCompras = tienePermiso('compras.ver');
 </script>
 

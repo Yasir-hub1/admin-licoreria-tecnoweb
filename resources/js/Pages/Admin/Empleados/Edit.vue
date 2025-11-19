@@ -1,32 +1,92 @@
 <template>
-    <MainLayout>
-        <div class="container mx-auto px-4 py-8">
-            <h1 class="text-3xl font-bold mb-6">Editar Empleado</h1>
-            <form @submit.prevent="submit" class="bg-white shadow rounded-lg p-6 max-w-md">
-                <div class="mb-4"><label class="block text-gray-700 font-bold mb-2">CI *</label>
-                    <input v-model="form.ci" type="text" class="w-full px-3 py-2 border rounded-lg" required />
-                </div>
-                <div class="mb-4"><label class="block text-gray-700 font-bold mb-2">Nombre *</label>
-                    <input v-model="form.nombre" type="text" class="w-full px-3 py-2 border rounded-lg" required />
-                </div>
-                <div class="mb-4"><label class="block text-gray-700 font-bold mb-2">Usuario *</label>
-                    <select v-model="form.usuario_id" class="w-full px-3 py-2 border rounded-lg" required>
-                        <option v-for="usuario in usuarios" :key="usuario.id" :value="usuario.id">{{ usuario.nombre }}</option>
-                    </select>
-                </div>
-                <div class="flex gap-4">
-                    <button type="submit" :disabled="form.processing" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded">Actualizar</button>
-                    <Link href="/admin/empleados" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium">Cancelar</Link>
-                </div>
-            </form>
+    <AdminLayout title="Editar Empleado" subtitle="Modifica la información del empleado">
+        <div class="space-y-6">
+            <div v-motion-slide-bottom class="bg-white shadow-xl rounded-2xl p-8 max-w-2xl border border-gray-100">
+                <form @submit.prevent="submit" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <TextInput
+                            v-model="form.ci"
+                            label="CI"
+                            type="text"
+                            name="ci"
+                            placeholder="12345678"
+                            required
+                            :error="form.errors.ci"
+                            :validation-rules="[validateCI]"
+                        />
+
+                        <TextInput
+                            v-model="form.nombre"
+                            label="Nombre Completo"
+                            type="text"
+                            name="nombre"
+                            placeholder="Juan Pérez"
+                            required
+                            :error="form.errors.nombre"
+                            :min-length="3"
+                            hint="Mínimo 3 caracteres"
+                        />
+                    </div>
+
+                    <SelectInput
+                        v-model="form.usuario_id"
+                        label="Usuario"
+                        name="usuario_id"
+                        placeholder="Seleccione un usuario"
+                        required
+                        :error="form.errors.usuario_id"
+                        :options="usuarios"
+                        option-value="id"
+                        option-label="nombre"
+                        hint="Usuario que tendrá acceso al sistema"
+                    />
+
+                    <div class="flex gap-4 pt-4">
+                        <Button
+                            type="submit"
+                            :loading="form.processing"
+                            :disabled="form.processing"
+                            variant="primary"
+                            size="lg"
+                        >
+                            Actualizar Empleado
+                        </Button>
+                        <Link href="/admin/empleados">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="lg"
+                            >
+                                Cancelar
+                            </Button>
+                        </Link>
+                    </div>
+                </form>
+            </div>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
+
 <script setup>
 import { useForm, Link } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
+import TextInput from '@/Components/Form/TextInput.vue';
+import SelectInput from '@/Components/Form/SelectInput.vue';
+import Button from '@/Components/Button.vue';
+
 const props = defineProps({ empleado: Object, usuarios: Array });
-const form = useForm({ ci: props.empleado.ci, nombre: props.empleado.nombre, usuario_id: props.empleado.usuario_id });
+
+const form = useForm({
+    ci: props.empleado.ci,
+    nombre: props.empleado.nombre,
+    usuario_id: props.empleado.usuario_id
+});
+
+const validateCI = (value) => {
+    if (!value) return true;
+    const ciRegex = /^\d{5,10}$/;
+    return ciRegex.test(value) || 'CI debe tener entre 5 y 10 dígitos';
+};
+
 const submit = () => form.put(`/admin/empleados/${props.empleado.id}`);
 </script>
-

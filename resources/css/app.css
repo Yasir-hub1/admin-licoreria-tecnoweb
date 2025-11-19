@@ -9,3 +9,87 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* Estilos de Accesibilidad - Contraste */
+[data-contrast="alto"] {
+    --contrast-text-weight: 700;
+    --contrast-border-width: 2px;
+}
+
+[data-contrast="muyAlto"] {
+    --contrast-text-weight: 900;
+    --contrast-border-width: 4px;
+}
+
+/* Aplicar contraste alto a textos */
+[data-contrast="alto"] p,
+[data-contrast="alto"] span,
+[data-contrast="alto"] div,
+[data-contrast="alto"] label,
+[data-contrast="alto"] h1,
+[data-contrast="alto"] h2,
+[data-contrast="alto"] h3,
+[data-contrast="alto"] h4,
+[data-contrast="alto"] h5,
+[data-contrast="alto"] h6 {
+    font-weight: var(--contrast-text-weight, 700) !important;
+}
+
+[data-contrast="muyAlto"] p,
+[data-contrast="muyAlto"] span,
+[data-contrast="muyAlto"] div,
+[data-contrast="muyAlto"] label,
+[data-contrast="muyAlto"] h1,
+[data-contrast="muyAlto"] h2,
+[data-contrast="muyAlto"] h3,
+[data-contrast="muyAlto"] h4,
+[data-contrast="muyAlto"] h5,
+[data-contrast="muyAlto"] h6 {
+    font-weight: var(--contrast-text-weight, 900) !important;
+    text-shadow: 0 0 1px currentColor;
+}
+
+/* Aplicar contraste a bordes de inputs y botones */
+[data-contrast="alto"] input,
+[data-contrast="alto"] textarea,
+[data-contrast="alto"] select,
+[data-contrast="alto"] button {
+    border-width: var(--contrast-border-width, 2px) !important;
+}
+
+[data-contrast="muyAlto"] input,
+[data-contrast="muyAlto"] textarea,
+[data-contrast="muyAlto"] select,
+[data-contrast="muyAlto"] button {
+    border-width: var(--contrast-border-width, 4px) !important;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Mejorar contraste de enlaces */
+[data-contrast="alto"] a,
+[data-contrast="muyAlto"] a {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+[data-contrast="muyAlto"] a {
+    text-decoration-thickness: 2px;
+}
+
+/* Mejorar visibilidad de elementos interactivos */
+[data-contrast="alto"] button:focus,
+[data-contrast="alto"] input:focus,
+[data-contrast="alto"] textarea:focus,
+[data-contrast="alto"] select:focus {
+    outline: 3px solid currentColor;
+    outline-offset: 2px;
+}
+
+[data-contrast="muyAlto"] button:focus,
+[data-contrast="muyAlto"] input:focus,
+[data-contrast="muyAlto"] textarea:focus,
+[data-contrast="muyAlto"] select:focus {
+    outline: 4px solid currentColor;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.2);
+}

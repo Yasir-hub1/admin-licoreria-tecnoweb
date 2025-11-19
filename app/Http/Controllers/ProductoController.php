@@ -7,10 +7,12 @@ use App\Models\Categoria;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-class ProductoController extends Controller
+class ProductoController extends BaseController
 {
     public function index()
     {
+        $this->verificarPermiso('productos.listar');
+
         $productos = Producto::with('categoria')->paginate(15);
         return Inertia::render('Admin/Productos/Index', [
             'productos' => $productos
@@ -19,6 +21,8 @@ class ProductoController extends Controller
 
     public function create()
     {
+        $this->verificarPermiso('productos.crear');
+
         $categorias = Categoria::all();
         return Inertia::render('Admin/Productos/Create', [
             'categorias' => $categorias
@@ -27,6 +31,7 @@ class ProductoController extends Controller
 
     public function store(Request $request)
     {
+        $this->verificarPermiso('productos.crear');
         $validated = $request->validate([
             'nombre' => 'required|string|max:100',
             'descripcion' => 'nullable|string',
@@ -35,15 +40,13 @@ class ProductoController extends Controller
             'categoria_id' => 'required|exists:categoria,id'
         ]);
 
-        // Generar código automáticamente
-        $ultimoProducto = Producto::orderBy('id', 'desc')->first();
-        $numero = $ultimoProducto ? ((int) preg_replace('/[^0-9]/', '', $ultimoProducto->codigo)) + 1 : 1;
-        $codigo = 'PROD-' . str_pad($numero, 6, '0', STR_PAD_LEFT);
+        // Generar código automáticamente usando CounterService
+        $counterService = app(\App\Services\CounterService::class);
+        $codigo = $counterService->obtenerSiguienteProducto();
 
         // Verificar que el código no exista (por si acaso)
         while (Producto::where('codigo', $codigo)->exists()) {
-            $numero++;
-            $codigo = 'PROD-' . str_pad($numero, 6, '0', STR_PAD_LEFT);
+            $codigo = $counterService->obtenerSiguienteProducto();
         }
 
         $validated['codigo'] = $codigo;
@@ -56,6 +59,8 @@ class ProductoController extends Controller
 
     public function show(string $id)
     {
+        $this->verificarPermiso('productos.ver');
+
         $producto = Producto::with('categoria')->findOrFail($id);
         return Inertia::render('Admin/Productos/Show', [
             'producto' => $producto
@@ -64,6 +69,8 @@ class ProductoController extends Controller
 
     public function edit(string $id)
     {
+        $this->verificarPermiso('productos.editar');
+
         $producto = Producto::findOrFail($id);
         $categorias = Categoria::all();
         return Inertia::render('Admin/Productos/Edit', [
@@ -74,6 +81,8 @@ class ProductoController extends Controller
 
     public function update(Request $request, string $id)
     {
+        $this->verificarPermiso('productos.editar');
+
         $producto = Producto::findOrFail($id);
 
         $validated = $request->validate([
@@ -95,6 +104,8 @@ class ProductoController extends Controller
 
     public function destroy(string $id)
     {
+        $this->verificarPermiso('productos.eliminar');
+
         $producto = Producto::findOrFail($id);
         $producto->delete();
 

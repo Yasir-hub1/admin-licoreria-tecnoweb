@@ -3,13 +3,15 @@ import { createApp, h } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
+import { MotionPlugin } from '@vueuse/motion';
 
 createInertiaApp({
     title: (title) => title ? `${title} - Sistema Tecnoweb` : 'Sistema Tecnoweb',
     resolve: (name) => resolvePageComponent(`./Pages/${name}.vue`, import.meta.glob('./Pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
         const app = createApp({ render: () => h(App, props) })
-            .use(plugin);
+            .use(plugin)
+            .use(MotionPlugin);
 
         if (typeof Ziggy !== 'undefined') {
             app.use(ZiggyVue, Ziggy);
@@ -18,6 +20,7 @@ createInertiaApp({
         return app.mount(el);
     },
     progress: {
-        color: '#4B5563',
+        color: '#3B82F6',
+        showSpinner: true,
     },
 });

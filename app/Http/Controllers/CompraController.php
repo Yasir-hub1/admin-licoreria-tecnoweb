@@ -43,11 +43,10 @@ class CompraController extends Controller
 
         try {
             DB::transaction(function () use ($validated) {
-                // Generar número de compra si no se proporciona
+                // Generar número de compra si no se proporciona usando CounterService
                 if (empty($validated['nro_compra'])) {
-                    $ultimaCompra = Compra::orderBy('id', 'desc')->first();
-                    $numero = $ultimaCompra ? (int)str_replace('C-', '', $ultimaCompra->nro_compra) + 1 : 1;
-                    $validated['nro_compra'] = 'C-' . str_pad($numero, 6, '0', STR_PAD_LEFT);
+                    $counterService = app(\App\Services\CounterService::class);
+                    $validated['nro_compra'] = $counterService->obtenerSiguienteCompra();
                 }
 
                 // Crear compra con estado pendiente por defecto

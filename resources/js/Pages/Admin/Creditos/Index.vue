@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <AdminLayout>
         <div class="container mx-auto px-4 py-8">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold">Créditos de Clientes</h1>
@@ -33,18 +33,24 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <Link :href="`/admin/creditos/${credito.id}`" class="text-blue-600 hover:text-blue-900">Ver Detalle</Link>
+                                <Link v-if="puedeVer" :href="`/admin/creditos/${credito.id}`" class="text-blue-600 hover:text-blue-900">Ver Detalle</Link>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
 <script setup>
 import { Link } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
+import { usePermissions } from '@/composables/usePermissions';
+
 defineProps({ creditos: Object });
+
+const { tienePermiso } = usePermissions();
+
+const puedeVer = tienePermiso('creditos.ver');
 </script>
 

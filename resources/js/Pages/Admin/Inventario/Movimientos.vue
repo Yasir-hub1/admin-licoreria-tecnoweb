@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <AdminLayout>
         <div class="container mx-auto px-4 py-8">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold">Movimientos de Inventario</h1>
@@ -49,11 +49,11 @@
                 </nav>
             </div>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
 <script setup>
 import { Link } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
 defineProps({ movimientos: Object });
 </script>
 

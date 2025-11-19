@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <AdminLayout>
         <div class="container mx-auto px-4 py-8">
             <div class="mb-6 flex justify-between items-center">
                 <Link href="/admin/compras" class="text-blue-600 hover:text-blue-800 flex items-center gap-2">
@@ -9,7 +9,7 @@
                     Volver a Compras
                 </Link>
                 <Link
-                    v-if="compra.estado !== 'validado'"
+                    v-if="puedeEditar && compra.estado !== 'validado'"
                     :href="`/admin/compras/${compra.id}/edit`"
                     class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium"
                 >
@@ -64,7 +64,7 @@
                 </div>
 
                 <div class="mb-6 flex gap-3">
-                    <form v-if="compra.estado !== 'validado' && compra.estado !== 'cancelado'" @submit.prevent="validarCompra" class="inline">
+                    <form v-if="puedeValidar && compra.estado !== 'validado' && compra.estado !== 'cancelado'" @submit.prevent="validarCompra" class="inline">
                         <button
                             type="submit"
                             :disabled="validating"
@@ -73,7 +73,7 @@
                             ✅ Validar Compra
                         </button>
                     </form>
-                    <form v-if="compra.estado !== 'validado' && compra.estado !== 'cancelado'" @submit.prevent="cancelarCompra" class="inline">
+                    <form v-if="puedeCancelar && compra.estado !== 'validado' && compra.estado !== 'cancelado'" @submit.prevent="cancelarCompra" class="inline">
                         <button
                             type="submit"
                             :disabled="cancelling"
@@ -133,17 +133,24 @@
                 </div>
             </div>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
+import { usePermissions } from '@/composables/usePermissions';
 
 const props = defineProps({
     compra: Object
 });
+
+const { tienePermiso } = usePermissions();
+
+const puedeEditar = tienePermiso('compras.editar');
+const puedeValidar = tienePermiso('compras.validar');
+const puedeCancelar = tienePermiso('compras.cancelar');
 
 // Calcular el total si no viene del backend o como respaldo
 const totalCompra = computed(() => {

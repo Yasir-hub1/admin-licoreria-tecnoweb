@@ -1,19 +1,30 @@
 <template>
-    <MainLayout>
-        <div class="container mx-auto px-4 py-8">
-            <h1 class="text-3xl font-bold mb-6">Inventario de Licores</h1>
+    <AdminLayout title="Inventario de Licores" subtitle="Gestiona el stock de productos">
+        <div class="space-y-6">
+
             <div class="mb-6 flex gap-4">
-                <Link href="/admin/inventario/movimientos" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
-                    📊 Ver Movimientos
+                <Link v-if="puedeVerMovimientos" href="/admin/inventario/movimientos">
+                    <Button variant="primary" size="md">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Ver Movimientos
+                    </Button>
                 </Link>
-                <button
+                <Button
+                    v-if="puedeRegistrarMovimiento"
                     @click="showAjusteModal = true"
-                    class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium"
+                    variant="success"
+                    size="md"
                 >
-                    ➕ Registrar Movimiento
-                </button>
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Registrar Movimiento
+                </Button>
             </div>
-            <div class="bg-white shadow rounded-lg overflow-hidden">
+
+            <div v-motion-slide-bottom class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50"><tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
@@ -34,7 +45,8 @@
                                 {{ producto.stock_actual || 0 }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <Link :href="`/admin/inventario/kardex/${producto.id}`" class="text-blue-600 hover:text-blue-800">Ver Kardex</Link>
+                                <Link v-if="puedeVerKardex" :href="`/admin/inventario/kardex/${producto.id}`" class="text-blue-600 hover:text-blue-800">Ver Kardex</Link>
+                                <span v-else class="text-gray-400">-</span>
                             </td>
                         </tr>
                     </tbody>
@@ -42,77 +54,79 @@
             </div>
 
             <!-- Modal de Movimiento de Inventario -->
-            <div v-if="showAjusteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-                    <h3 class="text-xl font-bold mb-4">Registrar Movimiento de Inventario</h3>
-                    <form @submit.prevent="submitAjuste">
-                        <div v-if="ajusteForm.errors.producto_id || ajusteForm.errors.tipo_movimiento || ajusteForm.errors.cantidad || ajusteForm.errors.glosa" class="mb-4 p-3 bg-red-100 border border-red-400 rounded-lg">
-                            <p class="text-red-700 text-sm font-medium mb-2">Errores:</p>
-                            <ul class="list-disc list-inside text-sm text-red-600">
-                                <li v-if="ajusteForm.errors.producto_id">{{ ajusteForm.errors.producto_id }}</li>
-                                <li v-if="ajusteForm.errors.tipo_movimiento">{{ ajusteForm.errors.tipo_movimiento }}</li>
-                                <li v-if="ajusteForm.errors.cantidad">{{ ajusteForm.errors.cantidad }}</li>
-                                <li v-if="ajusteForm.errors.glosa">{{ ajusteForm.errors.glosa }}</li>
-                            </ul>
+            <Transition
+                enter-active-class="transition ease-out duration-300"
+                enter-from-class="opacity-0"
+                enter-to-class="opacity-100"
+                leave-active-class="transition ease-in duration-200"
+                leave-from-class="opacity-100"
+                leave-to-class="opacity-0"
+            >
+                <div v-if="showAjusteModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" @click.self="cerrarModal">
+                    <div
+                        v-motion-pop
+                        class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto border border-gray-100"
+                    >
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                                Registrar Movimiento
+                            </h3>
+                            <button @click="cerrarModal" class="text-gray-400 hover:text-gray-600 transition-colors">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Producto *</label>
-                            <select
+                        <form @submit.prevent="submitAjuste" class="space-y-5">
+                            <SelectInput
                                 v-model="ajusteForm.producto_id"
+                                label="Producto"
+                                name="producto_id"
+                                placeholder="Seleccione producto"
+                                required
+                                :error="ajusteForm.errors.producto_id"
+                                :options="productos.map(p => ({
+                                    id: p.id,
+                                    nombre: `${p.nombre} (Stock: ${Number(p.stock_actual || 0).toFixed(0)})`
+                                }))"
+                                option-value="id"
+                                option-label="nombre"
                                 @change="onProductoChange"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                                :class="{ 'border-red-500': ajusteForm.errors.producto_id }"
-                                required
-                            >
-                                <option value="">Seleccione producto</option>
-                                <option v-for="producto in productos" :key="producto.id" :value="producto.id">
-                                    {{ producto.nombre }} (Stock: {{ Number(producto.stock_actual || 0).toFixed(0) }})
-                                </option>
-                            </select>
-                            <span v-if="ajusteForm.errors.producto_id" class="text-red-500 text-xs mt-1">{{ ajusteForm.errors.producto_id }}</span>
-                        </div>
+                            />
 
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Movimiento *</label>
-                            <select
+                            <SelectInput
                                 v-model="ajusteForm.tipo_movimiento"
-                                @change="onTipoMovimientoChange"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                                :class="{
-                                    'border-red-500': ajusteForm.errors.tipo_movimiento,
-                                    'border-green-500': ajusteForm.tipo_movimiento === 'INGRESO',
-                                    'border-orange-500': ajusteForm.tipo_movimiento === 'SALIDA'
-                                }"
+                                label="Tipo de Movimiento"
+                                name="tipo_movimiento"
+                                placeholder="Seleccione tipo de movimiento"
                                 required
-                            >
-                                <option value="">Seleccione tipo de movimiento</option>
-                                <option value="INGRESO">➕ Ingreso (Aumentar stock)</option>
-                                <option value="SALIDA">➖ Salida (Reducir stock)</option>
-                            </select>
-                            <span v-if="ajusteForm.errors.tipo_movimiento" class="text-red-500 text-xs mt-1">{{ ajusteForm.errors.tipo_movimiento }}</span>
-                        </div>
+                                :error="ajusteForm.errors.tipo_movimiento"
+                                :options="tipoMovimientoOptions"
+                                option-value="value"
+                                option-label="label"
+                                @change="onTipoMovimientoChange"
+                            />
 
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Cantidad *</label>
-                            <input
-                                v-model.number="ajusteForm.cantidad"
-                                type="number"
+                            <NumberInput
+                                v-model="ajusteForm.cantidad"
+                                label="Cantidad"
+                                name="cantidad"
+                                placeholder="0"
+                                required
+                                :error="ajusteForm.errors.cantidad || (ajusteForm.tipo_movimiento === 'SALIDA' && ajusteForm.cantidad > stockActual ? 'La cantidad no puede ser mayor al stock disponible' : '')"
                                 :min="1"
                                 :max="ajusteForm.tipo_movimiento === 'SALIDA' ? stockActual : undefined"
-                                step="1"
-                                placeholder="0"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                                :class="{ 'border-red-500': ajusteForm.errors.cantidad || (ajusteForm.tipo_movimiento === 'SALIDA' && ajusteForm.cantidad > stockActual) }"
-                                required
+                                :step="1"
+                                hint="Cantidad de unidades"
                             />
-                            <span v-if="ajusteForm.errors.cantidad" class="text-red-500 text-xs mt-1">{{ ajusteForm.errors.cantidad }}</span>
-                            <div v-if="ajusteForm.producto_id" class="mt-2 p-2 rounded-lg" :class="{
-                                'bg-blue-50 border border-blue-200': ajusteForm.tipo_movimiento === 'INGRESO',
-                                'bg-orange-50 border border-orange-200': ajusteForm.tipo_movimiento === 'SALIDA',
-                                'bg-gray-50 border border-gray-200': !ajusteForm.tipo_movimiento
+
+                            <div v-if="ajusteForm.producto_id" class="p-4 rounded-lg border-2" :class="{
+                                'bg-green-50 border-green-200': ajusteForm.tipo_movimiento === 'INGRESO',
+                                'bg-orange-50 border-orange-200': ajusteForm.tipo_movimiento === 'SALIDA',
+                                'bg-gray-50 border-gray-200': !ajusteForm.tipo_movimiento
                             }">
-                                <p class="text-xs font-medium mb-1">
+                                <p class="text-sm font-medium mb-1">
                                     <span v-if="ajusteForm.tipo_movimiento === 'INGRESO'" class="text-green-700">
                                         ➕ Stock actual: <strong>{{ stockActual }}</strong> → Stock final: <strong>{{ stockFinal }}</strong>
                                     </span>
@@ -123,61 +137,69 @@
                                         Stock actual: <strong>{{ stockActual }}</strong>
                                     </span>
                                 </p>
-                                <p v-if="ajusteForm.tipo_movimiento === 'SALIDA' && ajusteForm.cantidad > stockActual" class="text-xs text-red-600 font-medium mt-1">
-                                    ⚠️ La cantidad a salir no puede ser mayor al stock disponible
-                                </p>
                             </div>
-                        </div>
 
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Motivo / Glosa *</label>
-                            <textarea
+                            <TextareaInput
                                 v-model="ajusteForm.glosa"
-                                rows="3"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                                :class="{ 'border-red-500': ajusteForm.errors.glosa }"
+                                label="Motivo / Glosa"
+                                name="glosa"
                                 :placeholder="ajusteForm.tipo_movimiento === 'INGRESO' ? 'Ej: Compra de proveedor, Devolución de cliente, Ajuste por inventario físico, etc.' : 'Ej: Venta, Producto dañado, Pérdida, Ajuste por inventario físico, etc.'"
                                 required
-                            ></textarea>
-                            <span v-if="ajusteForm.errors.glosa" class="text-red-500 text-xs mt-1">{{ ajusteForm.errors.glosa }}</span>
-                            <p class="text-xs text-gray-500 mt-1">Máximo 200 caracteres</p>
-                        </div>
+                                :error="ajusteForm.errors.glosa"
+                                :rows="3"
+                                :max-length="200"
+                                hint="Máximo 200 caracteres"
+                            />
 
-                        <div class="flex gap-3">
-                            <button
-                                type="button"
-                                @click="cerrarModal"
-                                class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                type="submit"
-                                :disabled="ajusteForm.processing || (ajusteForm.tipo_movimiento === 'SALIDA' && ajusteForm.cantidad > stockActual)"
-                                class="flex-1 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                                :class="{
-                                    'bg-green-500 hover:bg-green-600': ajusteForm.tipo_movimiento === 'INGRESO',
-                                    'bg-orange-500 hover:bg-orange-600': ajusteForm.tipo_movimiento === 'SALIDA',
-                                    'bg-blue-500 hover:bg-blue-600': !ajusteForm.tipo_movimiento
-                                }"
-                            >
-                                <span v-if="ajusteForm.processing">Procesando...</span>
-                                <span v-else-if="ajusteForm.tipo_movimiento === 'INGRESO'">➕ Registrar Ingreso</span>
-                                <span v-else-if="ajusteForm.tipo_movimiento === 'SALIDA'">➖ Registrar Salida</span>
-                                <span v-else>Registrar Movimiento</span>
-                            </button>
-                        </div>
-                    </form>
+                            <div class="flex gap-3 pt-4">
+                                <Button
+                                    type="button"
+                                    @click="cerrarModal"
+                                    variant="outline"
+                                    full-width
+                                >
+                                    Cancelar
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    :loading="ajusteForm.processing"
+                                    :disabled="ajusteForm.processing || (ajusteForm.tipo_movimiento === 'SALIDA' && ajusteForm.cantidad > stockActual)"
+                                    :variant="ajusteForm.tipo_movimiento === 'INGRESO' ? 'success' : ajusteForm.tipo_movimiento === 'SALIDA' ? 'warning' : 'primary'"
+                                    full-width
+                                >
+                                    <span v-if="ajusteForm.tipo_movimiento === 'INGRESO'">➕ Registrar Ingreso</span>
+                                    <span v-else-if="ajusteForm.tipo_movimiento === 'SALIDA'">➖ Registrar Salida</span>
+                                    <span v-else>Registrar Movimiento</span>
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            </div>
+            </Transition>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
 import { useForm, Link } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
+import SelectInput from '@/Components/Form/SelectInput.vue';
+import NumberInput from '@/Components/Form/NumberInput.vue';
+import TextareaInput from '@/Components/Form/TextareaInput.vue';
+import Button from '@/Components/Button.vue';
+import { usePermissions } from '@/composables/usePermissions';
+
+const { tienePermiso } = usePermissions();
+
+const puedeVerMovimientos = tienePermiso('inventario.ver');
+const puedeRegistrarMovimiento = tienePermiso('inventario.crear');
+const puedeVerKardex = tienePermiso('inventario.ver');
+
+const tipoMovimientoOptions = [
+    { value: 'INGRESO', label: '➕ Ingreso (Aumentar stock)' },
+    { value: 'SALIDA', label: '➖ Salida (Reducir stock)' }
+];
 
 const props = defineProps({
     productos: Array

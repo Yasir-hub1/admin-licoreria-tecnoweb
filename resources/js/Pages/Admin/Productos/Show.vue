@@ -1,10 +1,10 @@
 <template>
-    <MainLayout>
+    <AdminLayout>
         <div class="container mx-auto px-4 py-8">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold">Detalle del Producto</h1>
                 <div class="space-x-2">
-                    <Link :href="`/admin/productos/${producto.id}/edit`" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
+                    <Link v-if="puedeEditar" :href="`/admin/productos/${producto.id}/edit`" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
                         Editar
                     </Link>
                     <Link href="/admin/productos" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium">
@@ -42,15 +42,20 @@
                 </dl>
             </div>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
 
 <script setup>
 import { Link } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
+import { usePermissions } from '@/composables/usePermissions';
 
 defineProps({
     producto: Object
 });
+
+const { tienePermiso } = usePermissions();
+
+const puedeEditar = tienePermiso('productos.editar');
 </script>
 

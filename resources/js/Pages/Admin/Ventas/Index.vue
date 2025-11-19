@@ -1,9 +1,9 @@
 <template>
-    <MainLayout>
+    <AdminLayout>
         <div class="container mx-auto px-4 py-8">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold">Ventas</h1>
-                <Link href="/admin/ventas/create" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
+                <Link v-if="puedeCrear" href="/admin/ventas/create" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
                     ➕ Nueva Venta
                 </Link>
             </div>
@@ -48,19 +48,36 @@
                                     Saldo: Bs. {{ Number(venta.saldo).toFixed(2) }}
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <Link :href="`/admin/ventas/${venta.id}`" class="text-blue-600 hover:text-blue-900">Ver</Link>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                <Link v-if="puedeVer" :href="`/admin/ventas/${venta.id}`" class="text-blue-600 hover:text-blue-900">Ver</Link>
+                                <Link v-if="puedeEditar" :href="`/admin/ventas/${venta.id}/edit`" class="text-indigo-600 hover:text-indigo-900">Editar</Link>
+                                <button v-if="puedeEliminar" @click="deleteItem(venta.id)" class="text-red-600 hover:text-red-900">Eliminar</button>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
 <script setup>
-import { Link } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import { Link, router } from '@inertiajs/vue3';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
+import { usePermissions } from '@/composables/usePermissions';
+
 defineProps({ ventas: Object });
+
+const { tienePermiso } = usePermissions();
+
+const puedeCrear = tienePermiso('ventas.crear');
+const puedeVer = tienePermiso('ventas.ver');
+const puedeEditar = tienePermiso('ventas.editar');
+const puedeEliminar = tienePermiso('ventas.eliminar');
+
+const deleteItem = (id) => {
+    if(confirm('¿Está seguro de eliminar esta venta?')) {
+        router.delete(`/admin/ventas/${id}`);
+    }
+};
 </script>
 

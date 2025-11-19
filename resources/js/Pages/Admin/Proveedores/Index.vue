@@ -1,9 +1,9 @@
 <template>
-    <MainLayout>
+    <AdminLayout>
         <div class="container mx-auto px-4 py-8">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold">Proveedores de Licores</h1>
-                <Link href="/admin/proveedores/create" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
+                <Link v-if="puedeCrear" href="/admin/proveedores/create" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
                     ➕ Nuevo Proveedor
                 </Link>
             </div>
@@ -38,9 +38,9 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                <Link :href="`/admin/proveedores/${proveedor.id}`" class="text-blue-600 hover:text-blue-900">Ver</Link>
-                                <Link :href="`/admin/proveedores/${proveedor.id}/edit`" class="text-indigo-600 hover:text-indigo-900">Editar</Link>
-                                <button @click="deleteItem(proveedor.id)" class="text-red-600 hover:text-red-900">Eliminar</button>
+                                <Link v-if="puedeVer" :href="`/admin/proveedores/${proveedor.id}`" class="text-blue-600 hover:text-blue-900">Ver</Link>
+                                <Link v-if="puedeEditar" :href="`/admin/proveedores/${proveedor.id}/edit`" class="text-indigo-600 hover:text-indigo-900">Editar</Link>
+                                <button v-if="puedeEliminar" @click="deleteItem(proveedor.id)" class="text-red-600 hover:text-red-900">Eliminar</button>
                             </td>
                         </tr>
                     </tbody>
@@ -63,16 +63,24 @@
                 </nav>
             </div>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
 
 <script setup>
 import { Link, router } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
+import { usePermissions } from '@/composables/usePermissions';
 
 defineProps({
     proveedores: Object
 });
+
+const { tienePermiso } = usePermissions();
+
+const puedeCrear = tienePermiso('proveedores.crear');
+const puedeVer = tienePermiso('proveedores.ver');
+const puedeEditar = tienePermiso('proveedores.editar');
+const puedeEliminar = tienePermiso('proveedores.eliminar');
 
 const deleteItem = (id) => {
     if(confirm('¿Está seguro de eliminar este proveedor?')) {

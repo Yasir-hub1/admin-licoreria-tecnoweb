@@ -130,4 +130,109 @@ class Usuario extends Authenticatable
     {
         return $this->hasRole('empleado') || $this->hasRole('vendedor');
     }
+
+    /**
+     * Verificar si el usuario tiene un permiso específico
+     * Verifica a través de su rol
+     */
+    public function tienePermiso($permiso)
+    {
+        if (!$this->rol) {
+            return false;
+        }
+
+        // Si es propietario, tiene todos los permisos
+        if ($this->isPropietario()) {
+            return true;
+        }
+
+        return $this->rol->tienePermiso($permiso);
+    }
+
+    /**
+     * Verificar si el usuario tiene alguno de los permisos dados
+     */
+    public function tieneAlgunPermiso(array $permisos)
+    {
+        foreach ($permisos as $permiso) {
+            if ($this->tienePermiso($permiso)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Verificar si el usuario tiene todos los permisos dados
+     */
+    public function tieneTodosLosPermisos(array $permisos)
+    {
+        foreach ($permisos as $permiso) {
+            if (!$this->tienePermiso($permiso)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Obtener todos los permisos del usuario a través de su rol
+     */
+    public function getPermisos()
+    {
+        if (!$this->rol) {
+            return collect([]);
+        }
+
+        // Cargar permisos si no están cargados
+        if (!$this->rol->relationLoaded('permisos')) {
+            $this->rol->load('permisos');
+        }
+
+        return $this->rol->permisos;
+    }
+
+    /**
+     * Obtener los slugs de permisos del usuario
+     */
+    public function getPermisosSlugs()
+    {
+        return $this->getPermisos()->pluck('slug')->toArray();
+    }
+
+    /**
+     * Verificar si el usuario tiene acceso al panel administrativo
+     * Tiene acceso si es propietario, empleado, o tiene algún permiso de módulos administrativos
+     */
+    public function tieneAccesoAdmin()
+    {
+        // Propietario y empleado siempre tienen acceso
+        if ($this->isPropietario() || $this->isEmpleado()) {
+            return true;
+        }
+
+        // Verificar si tiene algún permiso de módulos administrativos (excluyendo dashboard)
+        $permisos = $this->getPermisosSlugs();
+        $modulosAdmin = ['productos', 'categorias', 'ventas', 'compras', 'clientes', 'proveedores',
+                        'inventario', 'creditos', 'usuarios', 'roles', 'empleados', 'estadisticas'];
+
+        foreach ($permisos as $permiso) {
+            foreach ($modulosAdmin as $modulo) {
+                if (str_starts_with($permiso, $modulo . '.')) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Verificar si el usuario puede acceder al dashboard
+     * Solo propietario y empleado pueden acceder al dashboard completo
+     */
+    public function puedeAccederDashboard()
+    {
+        return $this->isPropietario() || $this->isEmpleado();
+    }
 }

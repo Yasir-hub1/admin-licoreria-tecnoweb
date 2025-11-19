@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <AdminLayout>
         <div class="container mx-auto px-4 py-8">
             <h1 class="text-3xl font-bold mb-6">Nuevo Usuario</h1>
             <form @submit.prevent="submit" class="bg-white shadow rounded-lg p-6 max-w-md">
@@ -30,11 +30,11 @@
                 </div>
             </form>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
 <script setup>
 import { useForm, Link } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
 const props = defineProps({ roles: Array });
 const form = useForm({ nombre: '', email: '', password: '', id_rol: '', estado: 'activo' });
 const submit = () => form.post('/admin/usuarios');

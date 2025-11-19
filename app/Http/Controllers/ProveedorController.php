@@ -6,10 +6,12 @@ use App\Models\Proveedor;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-class ProveedorController extends Controller
+class ProveedorController extends BaseController
 {
     public function index()
     {
+        $this->verificarPermiso('proveedores.listar');
+
         $proveedores = Proveedor::withCount('compras')->paginate(15);
         return Inertia::render('Admin/Proveedores/Index', [
             'proveedores' => $proveedores
@@ -18,11 +20,14 @@ class ProveedorController extends Controller
 
     public function create()
     {
+        $this->verificarPermiso('proveedores.crear');
+
         return Inertia::render('Admin/Proveedores/Create');
     }
 
     public function store(Request $request)
     {
+        $this->verificarPermiso('proveedores.crear');
         $validated = $request->validate([
             'nombre' => 'required|string|max:50',
             'telefono' => 'nullable|string|max:20',
@@ -39,6 +44,8 @@ class ProveedorController extends Controller
 
     public function show(string $id)
     {
+        $this->verificarPermiso('proveedores.ver');
+
         $proveedor = Proveedor::with('compras')->findOrFail($id);
         return Inertia::render('Admin/Proveedores/Show', [
             'proveedor' => $proveedor
@@ -47,6 +54,8 @@ class ProveedorController extends Controller
 
     public function edit(string $id)
     {
+        $this->verificarPermiso('proveedores.editar');
+
         $proveedor = Proveedor::findOrFail($id);
         return Inertia::render('Admin/Proveedores/Edit', [
             'proveedor' => $proveedor
@@ -55,6 +64,8 @@ class ProveedorController extends Controller
 
     public function update(Request $request, string $id)
     {
+        $this->verificarPermiso('proveedores.editar');
+
         $proveedor = Proveedor::findOrFail($id);
 
         $validated = $request->validate([
@@ -73,6 +84,8 @@ class ProveedorController extends Controller
 
     public function destroy(string $id)
     {
+        $this->verificarPermiso('proveedores.eliminar');
+
         $proveedor = Proveedor::findOrFail($id);
         $proveedor->delete();
 

@@ -62,9 +62,15 @@ class CheckoutController extends Controller
         // Calcular opciones de crédito dinámicas
         $opcionesCredito = $this->calcularOpcionesCredito($cliente, $cart['total']);
 
+        // Cargar información de verificación
+        $cliente->load('verificador');
+        
         return Inertia::render('Shop/Checkout', [
             'cart' => $cart,
-            'cliente' => $cliente,
+            'cliente' => [
+                ...$cliente->toArray(),
+                'tieneDocumentosCompletos' => $cliente->tieneDocumentosCompletos()
+            ],
             'puedeCredito' => $this->checkoutService->validateCreditEligibility($cliente),
             'opcionesCredito' => $opcionesCredito
         ]);
@@ -72,7 +78,8 @@ class CheckoutController extends Controller
 
     private function calcularOpcionesCredito($cliente, $montoTotal)
     {
-        if (!$cliente->credito_aprobado) {
+        // Verificar que el cliente esté verificado para crédito
+        if (!$cliente->estaVerificadoParaCredito()) {
             return [];
         }
 

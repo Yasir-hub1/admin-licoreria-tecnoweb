@@ -63,11 +63,20 @@ class AuthController extends Controller
             /** @var \App\Models\Usuario $user */
             $user = Auth::user();
 
-            // Redirigir según el rol
-            if ($user && ($user->isPropietario() || $user->isEmpleado())) {
-                return redirect()->intended('/admin/dashboard');
+            // Redirigir según el rol y permisos
+            if ($user) {
+                // Si puede acceder al dashboard (propietario o empleado)
+                if ($user->puedeAccederDashboard()) {
+                    return redirect()->intended('/admin/dashboard');
+                }
+
+                // Si tiene acceso al admin pero no al dashboard (permisos personalizados)
+                if ($user->tieneAccesoAdmin()) {
+                    return redirect()->intended('/admin/bienvenida');
+                }
             }
 
+            // Si no tiene acceso al admin, redirigir al shop
             return redirect()->intended('/shop');
         }
 

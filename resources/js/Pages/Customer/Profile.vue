@@ -34,7 +34,7 @@
 
                     <div v-if="cliente" class="bg-white shadow rounded-lg p-6">
                         <h2 class="text-xl font-semibold mb-4">Información de Crédito</h2>
-                        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>
                                 <dt class="text-sm font-medium text-gray-500 mb-1">Estado de Crédito</dt>
                                 <dd>
@@ -50,7 +50,34 @@
                                 <dt class="text-sm font-medium text-gray-500 mb-1">Límite de Crédito</dt>
                                 <dd class="text-sm text-gray-900 font-medium">Bs. {{ Number(cliente.limite_credito || 0).toFixed(2) }}</dd>
                             </div>
+                            <div v-if="cliente.estado_verificacion" class="md:col-span-2">
+                                <dt class="text-sm font-medium text-gray-500 mb-1">Estado de Verificación</dt>
+                                <dd>
+                                    <span
+                                        class="px-3 py-1 rounded-full text-xs font-medium"
+                                        :class="{
+                                            'bg-blue-100 text-blue-800': cliente.estado_verificacion === 'en_revision',
+                                            'bg-green-100 text-green-800': cliente.estado_verificacion === 'aprobado',
+                                            'bg-red-100 text-red-800': cliente.estado_verificacion === 'rechazado',
+                                            'bg-yellow-100 text-yellow-800': cliente.estado_verificacion === 'pendiente'
+                                        }"
+                                    >
+                                        <span v-if="cliente.estado_verificacion === 'en_revision'">⏳ En Revisión</span>
+                                        <span v-else-if="cliente.estado_verificacion === 'aprobado'">✅ Aprobado</span>
+                                        <span v-else-if="cliente.estado_verificacion === 'rechazado'">❌ Rechazado</span>
+                                        <span v-else>📋 Pendiente</span>
+                                    </span>
+                                </dd>
+                            </div>
                         </dl>
+                        <div v-if="!cliente.credito_aprobado || cliente.estado_verificacion !== 'aprobado'" class="pt-4 border-t">
+                            <Link
+                                href="/verificar-credito"
+                                class="block w-full bg-indigo-500 hover:bg-indigo-600 text-white text-center px-4 py-2 rounded-lg font-medium transition-colors"
+                            >
+                                {{ cliente.estado_verificacion === 'rechazado' ? 'Actualizar Documentos' : 'Solicitar Verificación de Crédito' }}
+                            </Link>
+                        </div>
                     </div>
                 </div>
 

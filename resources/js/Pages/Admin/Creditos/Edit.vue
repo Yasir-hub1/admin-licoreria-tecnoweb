@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <AdminLayout>
         <div class="container mx-auto px-4 py-8">
             <div class="mb-6">
                 <Link href="/admin/creditos" class="text-blue-600 hover:text-blue-800 flex items-center gap-2">
@@ -92,12 +92,12 @@
                 </div>
             </form>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
 
 <script setup>
 import { useForm, Link } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
 
 const props = defineProps({
     credito: Object

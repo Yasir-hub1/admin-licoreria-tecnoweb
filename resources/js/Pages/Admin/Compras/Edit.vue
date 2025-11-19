@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <AdminLayout>
         <div class="container mx-auto px-4 py-8">
             <div class="mb-6">
                 <Link href="/admin/compras" class="text-blue-600 hover:text-blue-800 flex items-center gap-2">
@@ -175,13 +175,13 @@
                 </div>
             </form>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useForm, Link, router } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
 
 const props = defineProps({
     compra: Object,

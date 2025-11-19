@@ -13,10 +13,14 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
+            \App\Http\Middleware\RegistrarVisita::class,
         ]);
 
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'permiso' => \App\Http\Middleware\PermisoMiddleware::class,
+            'admin' => \App\Http\Middleware\AdminAccessMiddleware::class,
+            'dashboard' => \App\Http\Middleware\DashboardAccessMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

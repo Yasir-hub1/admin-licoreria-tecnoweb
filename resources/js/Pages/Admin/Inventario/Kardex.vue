@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <AdminLayout>
         <div class="container mx-auto px-4 py-8">
             <div class="flex justify-between items-center mb-6">
                 <div>
@@ -36,11 +36,11 @@
                 </table>
             </div>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
 <script setup>
 import { Link } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
 defineProps({ producto: Object, movimientos: Array });
 </script>
 

@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <AdminLayout>
         <div class="container mx-auto px-4 py-8">
             <div class="mb-6">
                 <Link href="/admin/creditos" class="text-blue-600 hover:text-blue-800 flex items-center gap-2">
@@ -15,6 +15,7 @@
                     <h1 class="text-3xl font-bold">Detalle de Crédito #{{ credito.id }}</h1>
                     <div class="space-x-2">
                         <Link
+                            v-if="puedeEditar"
                             :href="`/admin/creditos/${credito.id}/edit`"
                             class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium"
                         >
@@ -88,11 +89,13 @@
                             </div>
                             <div>
                                 <Link
+                                    v-if="puedeVerVenta"
                                     :href="`/admin/ventas/${credito.venta.id}`"
                                     class="text-blue-600 hover:text-blue-800 text-sm font-medium"
                                 >
                                     Ver detalle de la venta →
                                 </Link>
+                                <span v-else class="text-gray-400 text-sm">-</span>
                             </div>
                         </dl>
                     </div>
@@ -104,6 +107,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-semibold">Cuotas y Pagos</h2>
                     <button
+                        v-if="puedeRegistrarPago"
                         @click="openPaymentModal"
                         class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium"
                     >
@@ -238,17 +242,24 @@
                 </div>
             </div>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
 import { useForm, Link, router } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
+import { usePermissions } from '@/composables/usePermissions';
 
 const props = defineProps({
     credito: Object
 });
+
+const { tienePermiso } = usePermissions();
+
+const puedeEditar = tienePermiso('creditos.editar');
+const puedeRegistrarPago = tienePermiso('creditos.pagos');
+const puedeVerVenta = tienePermiso('ventas.ver');
 
 const showPaymentModal = ref(false);
 

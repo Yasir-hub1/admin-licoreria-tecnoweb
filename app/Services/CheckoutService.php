@@ -113,8 +113,8 @@ class CheckoutService
 
     public function validateCreditEligibility($cliente)
     {
-        // Verificar si tiene crédito aprobado
-        if (!$cliente->credito_aprobado) {
+        // Verificar si tiene documentos verificados y aprobados
+        if (!$cliente->estaVerificadoParaCredito()) {
             return false;
         }
 
@@ -141,9 +141,8 @@ class CheckoutService
 
     private function generateNroVenta()
     {
-        $ultimaVenta = Venta::orderBy('id', 'desc')->first();
-        $numero = $ultimaVenta ? (int)str_replace('V-', '', $ultimaVenta->nro_venta) + 1 : 1;
-        return 'V-' . str_pad($numero, 6, '0', STR_PAD_LEFT);
+        $counterService = app(\App\Services\CounterService::class);
+        return $counterService->obtenerSiguienteVenta();
     }
 }
 

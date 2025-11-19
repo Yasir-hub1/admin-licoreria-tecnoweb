@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <AdminLayout>
         <div class="container mx-auto px-4 py-8">
             <div class="mb-6">
                 <Link href="/admin/ventas" class="text-blue-600 hover:text-blue-800 flex items-center gap-2">
@@ -252,14 +252,14 @@
                 </div>
             </form>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useForm, Link, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
 
 const page = usePage();
 const props = defineProps({

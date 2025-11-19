@@ -27,12 +27,21 @@ use App\Http\Controllers\InventarioController;
 
 // Página principal - redirige al login
 Route::get('/', function () {
-        if (Auth::check()) {
+    if (Auth::check()) {
         /** @var \App\Models\Usuario $user */
         $user = Auth::user();
-        if ($user->isPropietario() || $user->isEmpleado()) {
+
+        // Si puede acceder al dashboard (propietario o empleado)
+        if ($user->puedeAccederDashboard()) {
             return redirect('/admin/dashboard');
         }
+
+        // Si tiene acceso al admin pero no al dashboard (permisos personalizados)
+        if ($user->tieneAccesoAdmin()) {
+            return redirect('/admin/bienvenida');
+        }
+
+        // Si no tiene acceso al admin, redirigir al shop
         return redirect('/shop');
     }
     return redirect('/login');
@@ -79,25 +88,83 @@ Route::middleware(['auth', 'role:cliente'])->group(function () {
 
     // Perfil
     Route::get('/profile', [CustomerController::class, 'profile'])->name('customer.profile');
+    
+    // Verificación de Crédito
+    Route::get('/verificar-credito', [CustomerController::class, 'verificarCredito'])->name('customer.verificar-credito');
+    Route::post('/verificar-credito', [CustomerController::class, 'subirDocumentos'])->name('customer.subir-documentos');
 });
 
 // ====================================
-// RUTAS ADMIN (Propietario/Empleado)
+// RUTAS ADMIN (Propietario/Empleado o usuarios con permisos administrativos)
 // ====================================
 
-Route::middleware(['auth', 'role:propietario,empleado'])->prefix('admin')->name('admin.')->group(function () {
-    // Dashboard
-    Route::get('/dashboard', function () {
-        $stats = [
-            'productos' => \App\Models\Producto::count(),
-            'ventas' => \App\Models\Venta::count(),
-            'clientes' => \App\Models\Cliente::count(),
-            'creditos' => \App\Models\Credito::where('estado', 'activo')->count(),
-            'ventas_hoy' => \App\Models\Venta::whereDate('fecha', today())->count(),
-            'ventas_mes' => \App\Models\Venta::whereMonth('fecha', now()->month)->count(),
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    // Dashboard (solo propietario y empleado)
+    Route::middleware('dashboard')->group(function () {
+        Route::get('/dashboard', function () {
+            $stats = [
+                'productos' => \App\Models\Producto::count(),
+                'ventas' => \App\Models\Venta::count(),
+                'clientes' => \App\Models\Cliente::count(),
+                'creditos' => \App\Models\Credito::where('estado', 'activo')->count(),
+                'ventas_hoy' => \App\Models\Venta::whereDate('fecha', today())->count(),
+                'ventas_mes' => \App\Models\Venta::whereMonth('fecha', now()->month)->count(),
+            ];
+            return Inertia::render('Admin/Dashboard', ['stats' => $stats]);
+        })->name('dashboard');
+    });
+
+    // Página de bienvenida para usuarios con permisos personalizados
+    Route::get('/bienvenida', function () {
+        /** @var \App\Models\Usuario $user */
+        $user = Auth::user();
+
+        // Obtener módulos a los que tiene acceso
+        $permisos = $user->getPermisosSlugs();
+        $modulosDisponibles = [];
+        $modulosAdmin = [
+            'productos' => ['nombre' => 'Productos', 'icon' => '📦'],
+            'categorias' => ['nombre' => 'Categorías', 'icon' => '🏷️'],
+            'ventas' => ['nombre' => 'Ventas', 'icon' => '💰'],
+            'compras' => ['nombre' => 'Compras', 'icon' => '🛒'],
+            'clientes' => ['nombre' => 'Clientes', 'icon' => '👥'],
+            'proveedores' => ['nombre' => 'Proveedores', 'icon' => '🏢'],
+            'inventario' => ['nombre' => 'Inventario', 'icon' => '📊'],
+            'creditos' => ['nombre' => 'Créditos', 'icon' => '💳'],
+            'usuarios' => ['nombre' => 'Usuarios', 'icon' => '👤'],
+            'roles' => ['nombre' => 'Roles', 'icon' => '🔐'],
+            'empleados' => ['nombre' => 'Empleados', 'icon' => '👔'],
+            'estadisticas' => ['nombre' => 'Estadísticas', 'icon' => '📈'],
         ];
-        return Inertia::render('Admin/Dashboard', ['stats' => $stats]);
-    })->name('dashboard');
+
+        foreach ($permisos as $permiso) {
+            foreach ($modulosAdmin as $modulo => $info) {
+                if (str_starts_with($permiso, $modulo . '.')) {
+                    if (!in_array($modulo, array_column($modulosDisponibles, 'slug'))) {
+                        $modulosDisponibles[] = [
+                            'slug' => $modulo,
+                            'nombre' => $info['nombre'],
+                            'icon' => $info['icon'],
+                            'ruta' => "/admin/{$modulo}"
+                        ];
+                    }
+                }
+            }
+        }
+
+        return Inertia::render('Admin/Bienvenida', [
+            'usuario' => [
+                'nombre' => $user->nombre,
+                'rol' => $user->rol ? $user->rol->nombre : null,
+            ],
+            'modulosDisponibles' => $modulosDisponibles
+        ]);
+    })->name('bienvenida');
+
+    // Estadísticas y Reportes (solo propietario)
+    Route::middleware('role:propietario')->group(function () {
+        Route::get('estadisticas', [\App\Http\Controllers\Admin\EstadisticasController::class, 'index'])->name('estadisticas.index');
+    });
 
     // Gestión de Productos
     Route::resource('productos', ProductoController::class);
@@ -106,8 +173,12 @@ Route::middleware(['auth', 'role:propietario,empleado'])->prefix('admin')->name(
     Route::resource('categorias', CategoriaController::class);
 
     // Gestión de Clientes
-    Route::resource('clientes', ClienteController::class);
+    // IMPORTANTE: Las rutas específicas deben ir ANTES de Route::resource para evitar conflictos
+    Route::get('clientes/verificar-documentos', [ClienteController::class, 'verificarDocumentos'])->name('clientes.verificar-documentos');
+    Route::post('clientes/{id}/aprobar-documentos', [ClienteController::class, 'aprobarDocumentos'])->name('clientes.aprobar-documentos');
+    Route::post('clientes/{id}/rechazar-documentos', [ClienteController::class, 'rechazarDocumentos'])->name('clientes.rechazar-documentos');
     Route::post('clientes/{id}/toggle-credit', [ClienteController::class, 'toggleCredit'])->name('clientes.toggle-credit');
+    Route::resource('clientes', ClienteController::class);
 
     // Gestión de Proveedores
     Route::resource('proveedores', ProveedorController::class);
@@ -136,5 +207,10 @@ Route::middleware(['auth', 'role:propietario,empleado'])->prefix('admin')->name(
         Route::resource('usuarios', UsuarioController::class);
         Route::resource('roles', RolController::class);
         Route::resource('empleados', EmpleadoController::class);
+
+        // Gestión de Contadores
+        Route::get('contadores', [\App\Http\Controllers\Admin\ContadorController::class, 'index'])->name('contadores.index');
+        Route::post('contadores/sincronizar', [\App\Http\Controllers\Admin\ContadorController::class, 'sincronizar'])->name('contadores.sincronizar');
+        Route::put('contadores/{id}', [\App\Http\Controllers\Admin\ContadorController::class, 'actualizar'])->name('contadores.update');
     });
 });

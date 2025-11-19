@@ -1,92 +1,106 @@
 <template>
-    <div class="min-h-screen bg-gray-100 flex items-center justify-center py-12">
-        <div class="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-            <h2 class="text-2xl font-bold text-center mb-6">Registrarse</h2>
+    <div class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4 py-12">
+        <div
+            v-motion-fade
+            class="max-w-md w-full bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-gray-100"
+        >
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                    Crear Cuenta
+                </h2>
+                <p class="text-gray-600 text-sm">Únete a nuestra plataforma</p>
+            </div>
 
-            <form @submit.prevent="submit">
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Nombre Completo</label>
-                    <input
-                        v-model="form.nombre"
-                        type="text"
-                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-                        required
-                    />
-                    <span v-if="form.errors.nombre" class="text-red-500 text-sm">{{ form.errors.nombre }}</span>
-                </div>
+            <form @submit.prevent="submit" class="space-y-4">
+                <TextInput
+                    v-model="form.nombre"
+                    label="Nombre Completo"
+                    type="text"
+                    name="nombre"
+                    placeholder="Juan Pérez"
+                    required
+                    :error="form.errors.nombre"
+                    :min-length="3"
+                    hint="Mínimo 3 caracteres"
+                />
 
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">CI</label>
-                    <input
-                        v-model="form.ci"
-                        type="text"
-                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-                        required
-                    />
-                    <span v-if="form.errors.ci" class="text-red-500 text-sm">{{ form.errors.ci }}</span>
-                </div>
+                <TextInput
+                    v-model="form.ci"
+                    label="CI"
+                    type="text"
+                    name="ci"
+                    placeholder="12345678"
+                    required
+                    :error="form.errors.ci"
+                    :validation-rules="[validateCI]"
+                />
 
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
-                    <input
-                        v-model="form.email"
-                        type="email"
-                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-                        required
-                    />
-                    <span v-if="form.errors.email" class="text-red-500 text-sm">{{ form.errors.email }}</span>
-                </div>
+                <TextInput
+                    v-model="form.email"
+                    label="Email"
+                    type="email"
+                    name="email"
+                    placeholder="tu@email.com"
+                    required
+                    :error="form.errors.email"
+                    :validation-rules="[validateEmail]"
+                />
 
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Teléfono</label>
-                    <input
-                        v-model="form.telefono"
-                        type="text"
-                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-                    />
-                </div>
+                <TextInput
+                    v-model="form.telefono"
+                    label="Teléfono"
+                    type="tel"
+                    name="telefono"
+                    placeholder="+591 12345678"
+                    :validation-rules="[validateTelefono]"
+                />
 
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Dirección</label>
-                    <input
-                        v-model="form.direccion"
-                        type="text"
-                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-                    />
-                </div>
+                <TextInput
+                    v-model="form.direccion"
+                    label="Dirección"
+                    type="text"
+                    name="direccion"
+                    placeholder="Calle, Número, Ciudad"
+                />
 
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Contraseña</label>
-                    <input
-                        v-model="form.password"
-                        type="password"
-                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-                        required
-                    />
-                    <span v-if="form.errors.password" class="text-red-500 text-sm">{{ form.errors.password }}</span>
-                </div>
+                <TextInput
+                    v-model="form.password"
+                    label="Contraseña"
+                    type="password"
+                    name="password"
+                    placeholder="••••••••"
+                    required
+                    :error="form.errors.password"
+                    :min-length="6"
+                    hint="Mínimo 6 caracteres"
+                />
 
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Confirmar Contraseña</label>
-                    <input
-                        v-model="form.password_confirmation"
-                        type="password"
-                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-                        required
-                    />
-                </div>
+                <TextInput
+                    v-model="form.password_confirmation"
+                    label="Confirmar Contraseña"
+                    type="password"
+                    name="password_confirmation"
+                    placeholder="••••••••"
+                    required
+                    :error="passwordMatchError"
+                    :validation-rules="[validatePasswordMatch]"
+                />
 
-                <button
+                <Button
                     type="submit"
+                    :loading="form.processing"
                     :disabled="form.processing"
-                    class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                    variant="primary"
+                    full-width
+                    size="lg"
+                    class="w-full mt-6"
                 >
                     Registrarse
-                </button>
+                </Button>
 
-                <div class="mt-4 text-center">
-                    <Link href="/login" class="text-blue-500 hover:underline">
-                        ¿Ya tienes cuenta? Inicia sesión
+                <div class="mt-6 text-center">
+                    <Link href="/login" class="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200">
+                        ¿Ya tienes cuenta? <span class="underline">Inicia sesión</span>
                     </Link>
                 </div>
             </form>
@@ -95,7 +109,10 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { useForm, Link } from '@inertiajs/vue3';
+import TextInput from '@/Components/Form/TextInput.vue';
+import Button from '@/Components/Button.vue';
 
 const form = useForm({
     nombre: '',
@@ -105,6 +122,36 @@ const form = useForm({
     direccion: '',
     password: '',
     password_confirmation: '',
+});
+
+const validateEmail = (value) => {
+    if (!value) return true;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(value) || 'Email inválido';
+};
+
+const validateCI = (value) => {
+    if (!value) return true;
+    const ciRegex = /^\d{5,10}$/;
+    return ciRegex.test(value) || 'CI debe tener entre 5 y 10 dígitos';
+};
+
+const validateTelefono = (value) => {
+    if (!value) return true;
+    const telefonoRegex = /^[\d\s\+\-\(\)]{7,15}$/;
+    return telefonoRegex.test(value) || 'Teléfono inválido';
+};
+
+const validatePasswordMatch = (value) => {
+    if (!value) return true;
+    return value === form.password || 'Las contraseñas no coinciden';
+};
+
+const passwordMatchError = computed(() => {
+    if (form.password_confirmation && form.password_confirmation !== form.password) {
+        return 'Las contraseñas no coinciden';
+    }
+    return '';
 });
 
 const submit = () => {
