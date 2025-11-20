@@ -19,10 +19,6 @@ class RolSeeder extends Seeder
                 'descripcion' => 'Acceso completo admin'
             ],
             [
-                'nombre' => 'empleado',
-                'descripcion' => 'Empleado del sistema'
-            ],
-            [
                 'nombre' => 'cliente',
                 'descripcion' => 'Cliente ecommerce'
             ]

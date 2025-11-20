@@ -53,8 +53,8 @@ class EstadisticasController extends Controller
         // Compras vs Ventas
         $comprasVsVentas = $this->comprasVsVentas($fechaInicio, $fechaFin);
 
-        // Ingresos por empleado
-        $ingresosPorEmpleado = $this->ingresosPorEmpleado($fechaInicio, $fechaFin);
+        // Ingresos por usuario
+        $ingresosPorUsuario = $this->ingresosPorUsuario($fechaInicio, $fechaFin);
 
         // Productos con bajo stock
         $productosBajoStock = $this->productosBajoStock(10);
@@ -73,7 +73,7 @@ class EstadisticasController extends Controller
             'topClientes' => $topClientes,
             'estadoCreditos' => $estadoCreditos,
             'comprasVsVentas' => $comprasVsVentas,
-            'ingresosPorEmpleado' => $ingresosPorEmpleado,
+            'ingresosPorUsuario' => $ingresosPorUsuario,
             'productosBajoStock' => $productosBajoStock,
             'categorias' => $categorias,
             'clientes' => $clientes,
@@ -347,17 +347,17 @@ class EstadisticasController extends Controller
         ];
     }
 
-    private function ingresosPorEmpleado($fechaInicio, $fechaFin)
+    private function ingresosPorUsuario($fechaInicio, $fechaFin)
     {
         return Venta::select(
-                'empleado.id',
-                'empleado.nombre',
+                'usuario.id',
+                'usuario.nombre',
                 DB::raw('COUNT(venta.id) as total_ventas'),
                 DB::raw('SUM(venta.monto_total) as total_ingresos')
             )
-            ->join('empleado', 'venta.vendedor_id', '=', 'empleado.id')
+            ->join('usuario', 'venta.usuario_id', '=', 'usuario.id')
             ->whereBetween('venta.fecha', [$fechaInicio, $fechaFin])
-            ->groupBy('empleado.id', 'empleado.nombre')
+            ->groupBy('usuario.id', 'usuario.nombre')
             ->orderByDesc('total_ingresos')
             ->get()
             ->map(function ($item) {

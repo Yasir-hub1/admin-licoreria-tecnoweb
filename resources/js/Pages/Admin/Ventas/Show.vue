@@ -26,8 +26,8 @@
                                 <dd class="font-medium">{{ venta.cliente?.nombre || '-' }}</dd>
                             </div>
                             <div>
-                                <dt class="text-sm text-gray-600">Empleado:</dt>
-                                <dd class="font-medium">{{ venta.vendedor?.nombre || venta.empleado?.nombre || '-' }}</dd>
+                                <dt class="text-sm text-gray-600">Usuario:</dt>
+                                <dd class="font-medium">{{ venta.usuario?.nombre || '-' }}</dd>
                             </div>
                             <div>
                                 <dt class="text-sm text-gray-600">Tipo:</dt>

@@ -92,6 +92,7 @@
                         </Link>
                     </div>
                 </form>
+            </div>
         </div>
     </AdminLayout>
 </template>

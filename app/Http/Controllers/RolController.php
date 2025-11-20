@@ -11,7 +11,7 @@ class RolController extends Controller
 {
     public function index()
     {
-        $roles = Rol::withCount(['usuarios', 'permisos'])->paginate(15);
+        $roles = Rol::withCount(['usuarios', 'permisos'])->orderBy('id', 'desc')->paginate(15);
         return Inertia::render('Admin/Roles/Index', [
             'roles' => $roles
         ]);

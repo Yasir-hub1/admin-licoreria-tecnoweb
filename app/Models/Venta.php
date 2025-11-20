@@ -20,7 +20,7 @@ class Venta extends Model
         'estado',
         'estado_pago',
         'cliente_id',
-        'vendedor_id'
+        'usuario_id'
     ];
 
     protected $casts = [
@@ -32,14 +32,20 @@ class Venta extends Model
         return $this->belongsTo(Cliente::class, 'cliente_id');
     }
 
+    public function usuario()
+    {
+        return $this->belongsTo(Usuario::class, 'usuario_id');
+    }
+
+    // Mantener compatibilidad temporal (deprecated)
     public function vendedor()
     {
-        return $this->belongsTo(Empleado::class, 'vendedor_id');
+        return $this->belongsTo(Usuario::class, 'usuario_id');
     }
 
     public function empleado()
     {
-        return $this->belongsTo(Empleado::class, 'vendedor_id');
+        return $this->belongsTo(Usuario::class, 'usuario_id');
     }
 
     public function detalles()

@@ -50,6 +50,7 @@ class PermisoSeeder extends Seeder
             ['nombre' => 'Eliminar Compra', 'slug' => 'compras.eliminar', 'descripcion' => 'Eliminar compras', 'modulo' => 'Compras'],
             ['nombre' => 'Validar Compra', 'slug' => 'compras.validar', 'descripcion' => 'Validar compras pendientes', 'modulo' => 'Compras'],
             ['nombre' => 'Cancelar Compra', 'slug' => 'compras.cancelar', 'descripcion' => 'Cancelar compras', 'modulo' => 'Compras'],
+            ['nombre' => 'Ver Compras Propias', 'slug' => 'compras.ver_propias', 'descripcion' => 'Ver solo las compras donde el proveedor está involucrado', 'modulo' => 'Compras'],
 
             // ============================================
             // MÓDULO: CLIENTES
@@ -102,15 +103,6 @@ class PermisoSeeder extends Seeder
             ['nombre' => 'Crear Rol', 'slug' => 'roles.crear', 'descripcion' => 'Crear nuevos roles', 'modulo' => 'Roles'],
             ['nombre' => 'Editar Rol', 'slug' => 'roles.editar', 'descripcion' => 'Editar roles existentes y asignar permisos', 'modulo' => 'Roles'],
             ['nombre' => 'Eliminar Rol', 'slug' => 'roles.eliminar', 'descripcion' => 'Eliminar roles', 'modulo' => 'Roles'],
-
-            // ============================================
-            // MÓDULO: EMPLEADOS
-            // ============================================
-            ['nombre' => 'Listar Empleados', 'slug' => 'empleados.listar', 'descripcion' => 'Ver la lista de empleados', 'modulo' => 'Empleados'],
-            ['nombre' => 'Ver Empleado', 'slug' => 'empleados.ver', 'descripcion' => 'Ver detalles de un empleado', 'modulo' => 'Empleados'],
-            ['nombre' => 'Crear Empleado', 'slug' => 'empleados.crear', 'descripcion' => 'Crear nuevos empleados', 'modulo' => 'Empleados'],
-            ['nombre' => 'Editar Empleado', 'slug' => 'empleados.editar', 'descripcion' => 'Editar empleados existentes', 'modulo' => 'Empleados'],
-            ['nombre' => 'Eliminar Empleado', 'slug' => 'empleados.eliminar', 'descripcion' => 'Eliminar empleados', 'modulo' => 'Empleados'],
 
             // ============================================
             // MÓDULO: ESTADÍSTICAS

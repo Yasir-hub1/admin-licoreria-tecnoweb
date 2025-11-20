@@ -26,7 +26,6 @@ class InventarioController extends Controller
     public function movimientos()
     {
         $movimientos = Inventario::with(['usuario', 'producto', 'detalleCompra', 'detalleVenta'])
-            ->orderBy('fecha', 'desc')
             ->orderBy('id', 'desc')
             ->paginate(20);
         return Inertia::render('Admin/Inventario/Movimientos', [

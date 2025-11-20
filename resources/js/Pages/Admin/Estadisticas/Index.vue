@@ -179,25 +179,25 @@
 
             <!-- Información Adicional -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Ingresos por Empleado -->
+                <!-- Ingresos por Usuario -->
                 <div v-motion-slide-bottom class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
                     <div class="p-6 border-b border-gray-200">
-                        <h3 class="text-lg font-bold text-gray-800">Ingresos por Empleado</h3>
+                        <h3 class="text-lg font-bold text-gray-800">Ingresos por Usuario</h3>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Empleado</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuario</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ventas</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ingresos</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="empleado in ingresosPorEmpleado" :key="empleado.id" class="hover:bg-gray-50">
-                                    <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ empleado.nombre }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900">{{ empleado.total_ventas }}</td>
-                                    <td class="px-4 py-3 text-sm font-semibold text-green-600">Bs. {{ empleado.total_ingresos.toLocaleString() }}</td>
+                                <tr v-for="usuario in ingresosPorUsuario" :key="usuario.id" class="hover:bg-gray-50">
+                                    <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ usuario.nombre }}</td>
+                                    <td class="px-4 py-3 text-sm text-gray-900">{{ usuario.total_ventas }}</td>
+                                    <td class="px-4 py-3 text-sm font-semibold text-green-600">Bs. {{ usuario.total_ingresos.toLocaleString() }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -265,7 +265,7 @@ const props = defineProps({
     topClientes: Array,
     estadoCreditos: Object,
     comprasVsVentas: Object,
-    ingresosPorEmpleado: Array,
+    ingresosPorUsuario: Array,
     productosBajoStock: Array,
     categorias: Array,
     clientes: Array,
@@ -405,17 +405,17 @@ const exportarExcel = () => {
     const tipoSheet = XLSX.utils.aoa_to_sheet(tipoData);
     XLSX.utils.book_append_sheet(workbook, tipoSheet, 'Ventas por Tipo');
 
-    // Hoja 7: Ingresos por Empleado
-    const empleadosData = [
-        ['Empleado', 'Total Ventas', 'Total Ingresos (Bs.)'],
-        ...props.ingresosPorEmpleado.map(e => [
+    // Hoja 7: Ingresos por Usuario
+    const usuariosData = [
+        ['Usuario', 'Total Ventas', 'Total Ingresos (Bs.)'],
+        ...props.ingresosPorUsuario.map(e => [
             e.nombre,
             e.total_ventas,
             e.total_ingresos
         ])
     ];
-    const empleadosSheet = XLSX.utils.aoa_to_sheet(empleadosData);
-    XLSX.utils.book_append_sheet(workbook, empleadosSheet, 'Ingresos por Empleado');
+    const usuariosSheet = XLSX.utils.aoa_to_sheet(usuariosData);
+    XLSX.utils.book_append_sheet(workbook, usuariosSheet, 'Ingresos por Usuario');
 
     // Hoja 8: Productos con Bajo Stock
     const stockData = [

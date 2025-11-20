@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Producto;
 use App\Models\Categoria;
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Inertia\Inertia;
 
 class ProductoController extends BaseController
@@ -106,10 +107,51 @@ class ProductoController extends BaseController
     {
         $this->verificarPermiso('productos.eliminar');
 
-        $producto = Producto::findOrFail($id);
-        $producto->delete();
+        try {
+            $producto = Producto::findOrFail($id);
 
-        return redirect('/admin/productos')
-            ->with('success', 'Producto eliminado exitosamente');
+            // Verificar si el producto tiene relaciones antes de intentar eliminar
+            $tieneCompras = $producto->detallesCompra()->exists();
+            $tieneVentas = $producto->detallesVenta()->exists();
+            $tieneCarrito = $producto->itemsCarrito()->exists();
+            $tieneInventario = $producto->inventarios()->exists();
+
+            if ($tieneCompras || $tieneVentas || $tieneCarrito || $tieneInventario) {
+                $relaciones = [];
+                
+                if ($tieneCompras) {
+                    $relaciones[] = 'compras';
+                }
+                if ($tieneVentas) {
+                    $relaciones[] = 'ventas';
+                }
+                if ($tieneCarrito) {
+                    $relaciones[] = 'carrito de compras';
+                }
+                if ($tieneInventario) {
+                    $relaciones[] = 'inventario';
+                }
+
+                $mensaje = 'No se puede eliminar el producto "' . $producto->nombre . '" porque está siendo utilizado en: ' . implode(', ', $relaciones) . '.';
+                
+                return redirect('/admin/productos')
+                    ->with('error', $mensaje);
+            }
+
+            $producto->delete();
+
+            return redirect('/admin/productos')
+                ->with('success', 'Producto eliminado exitosamente');
+        } catch (QueryException $e) {
+            // Capturar excepciones de clave foránea por si acaso
+            if ($e->getCode() == '23503' || str_contains($e->getMessage(), 'foreign key constraint')) {
+                $productoNombre = isset($producto) ? $producto->nombre : 'este producto';
+                return redirect('/admin/productos')
+                    ->with('error', 'No se puede eliminar el producto "' . $productoNombre . '" porque está siendo utilizado en otras operaciones del sistema (compras, ventas o inventario).');
+            }
+            
+            // Re-lanzar otras excepciones
+            throw $e;
+        }
     }
 }

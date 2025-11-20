@@ -10,7 +10,7 @@ class CreditoController extends Controller
 {
     public function index()
     {
-        $creditos = Credito::with(['venta.cliente'])->orderBy('fecha_inicio', 'desc')->paginate(15);
+        $creditos = Credito::with(['venta.cliente'])->orderBy('id', 'desc')->paginate(15);
         return Inertia::render('Admin/Creditos/Index', [
             'creditos' => $creditos
         ]);

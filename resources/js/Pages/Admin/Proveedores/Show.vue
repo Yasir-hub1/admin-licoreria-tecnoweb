@@ -36,6 +36,25 @@
                         <dt class="text-sm font-medium text-gray-500">Dirección</dt>
                         <dd class="mt-1 text-sm text-gray-900">{{ proveedor.direccion || '-' }}</dd>
                     </div>
+                    <div v-if="proveedor.usuario">
+                        <dt class="text-sm font-medium text-gray-500">Usuario del Sistema</dt>
+                        <dd class="mt-1">
+                            <div class="flex items-center gap-2">
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-900">{{ proveedor.usuario.nombre }}</p>
+                                    <p class="text-xs text-gray-600">{{ proveedor.usuario.email }}</p>
+                                    <p class="text-xs text-blue-600">Rol: {{ proveedor.usuario.rol?.nombre || 'Sin rol' }}</p>
+                                </div>
+                                <Link v-if="puedeVerUsuario" :href="`/admin/usuarios/${proveedor.usuario.id}`" class="ml-2 text-blue-600 hover:text-blue-900 text-sm">
+                                    Ver Usuario →
+                                </Link>
+                            </div>
+                        </dd>
+                    </div>
+                    <div v-else>
+                        <dt class="text-sm font-medium text-gray-500">Usuario del Sistema</dt>
+                        <dd class="mt-1 text-sm text-gray-400 italic">Sin usuario asignado</dd>
+                    </div>
                 </dl>
             </div>
 
@@ -90,5 +109,6 @@ const { tienePermiso } = usePermissions();
 
 const puedeEditar = tienePermiso('proveedores.editar');
 const puedeVerCompras = tienePermiso('compras.ver');
+const puedeVerUsuario = tienePermiso('usuarios.ver');
 </script>
 

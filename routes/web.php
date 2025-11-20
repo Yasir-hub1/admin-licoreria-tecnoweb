@@ -15,7 +15,6 @@ use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\ClienteController;
-use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\CreditoController;
 use App\Http\Controllers\PagosController;
@@ -302,7 +301,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::middleware('role:propietario')->group(function () {
         Route::resource('usuarios', UsuarioController::class);
         Route::resource('roles', RolController::class);
-        Route::resource('empleados', EmpleadoController::class);
 
         // Gestión de Contadores
         Route::get('contadores', [\App\Http\Controllers\Admin\ContadorController::class, 'index'])->name('contadores.index');

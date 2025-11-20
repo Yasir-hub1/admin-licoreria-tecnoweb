@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Venta;
 use App\Models\Cliente;
-use App\Models\Empleado;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -12,7 +11,7 @@ class VentaController extends Controller
 {
     public function index()
     {
-        $ventas = Venta::with(['cliente', 'vendedor', 'credito'])->orderBy('fecha', 'desc')->paginate(15);
+        $ventas = Venta::with(['cliente', 'usuario', 'credito'])->orderBy('id', 'desc')->paginate(15);
 
         // Calcular estado real basado en saldo pendiente
         foreach ($ventas as $venta) {
@@ -33,12 +32,9 @@ class VentaController extends Controller
         $clientes = Cliente::where('estado', 'A')->get();
         $productos = \App\Models\Producto::with('categoria')->get();
 
-        // Obtener el empleado del usuario autenticado
+        // Obtener el usuario autenticado
         $usuario = \Illuminate\Support\Facades\Auth::user();
-        $vendedorId = null;
-        if ($usuario && $usuario->empleado) {
-            $vendedorId = $usuario->empleado->id;
-        }
+        $usuarioId = $usuario ? $usuario->id : null;
 
         // Calcular stock para cada producto
         $inventoryService = app(\App\Services\InventoryService::class);
@@ -49,7 +45,7 @@ class VentaController extends Controller
 
         return Inertia::render('Admin/Ventas/Create', [
             'clientes' => $clientes,
-            'vendedor_id' => $vendedorId,
+            'usuario_id' => $usuarioId,
             'productos' => $productos,
             'stocks' => $stocks
         ]);
@@ -74,7 +70,7 @@ class VentaController extends Controller
     {
         $validated = $request->validate([
             'cliente_id' => 'required|exists:cliente,id',
-            'vendedor_id' => 'required|exists:empleado,id',
+            'usuario_id' => 'required|exists:usuario,id',
             'fecha' => 'required|date',
             'tipo' => 'required|in:contado,credito',
             'numero_cuotas' => 'nullable|integer|min:2|max:12',
@@ -122,7 +118,7 @@ class VentaController extends Controller
                     'numero_cuotas' => $validated['tipo'] === 'credito' ? ($validated['numero_cuotas'] ?? 2) : 0,
                     'estado' => $estadoVenta,
                     'cliente_id' => $validated['cliente_id'],
-                    'vendedor_id' => $validated['vendedor_id']
+                    'usuario_id' => $validated['usuario_id']
                 ]);
 
                 // Crear detalles
@@ -165,7 +161,7 @@ class VentaController extends Controller
     {
         $venta = Venta::with([
             'cliente',
-            'empleado',
+            'usuario',
             'detalles.producto',
             'credito'
         ])->findOrFail($id);
@@ -226,7 +222,6 @@ class VentaController extends Controller
     {
         $venta = Venta::with('detalles.producto')->findOrFail($id);
         $clientes = Cliente::where('estado', 'A')->get();
-        $empleados = Empleado::all();
         $productos = \App\Models\Producto::with('categoria')->get();
 
         // Calcular stock para cada producto
@@ -239,7 +234,6 @@ class VentaController extends Controller
         return Inertia::render('Admin/Ventas/Edit', [
             'venta' => $venta,
             'clientes' => $clientes,
-            'empleados' => $empleados,
             'productos' => $productos,
             'stocks' => $stocks
         ]);
@@ -257,7 +251,7 @@ class VentaController extends Controller
         $validated = $request->validate([
             'nro_venta' => 'required|string|max:50',
             'cliente_id' => 'required|exists:cliente,id',
-            'vendedor_id' => 'required|exists:empleado,id',
+            'usuario_id' => 'required|exists:usuario,id',
             'fecha' => 'required|date',
             'tipo' => 'required|in:contado,credito',
             'numero_cuotas' => 'nullable|integer|min:2|max:12',
@@ -298,7 +292,7 @@ class VentaController extends Controller
                     'numero_cuotas' => $validated['tipo'] === 'credito' ? ($validated['numero_cuotas'] ?? 2) : 0,
                     'estado' => $validated['estado'],
                     'cliente_id' => $validated['cliente_id'],
-                    'vendedor_id' => $validated['vendedor_id']
+                    'usuario_id' => $validated['usuario_id']
                 ]);
 
                 // Eliminar detalles antiguos

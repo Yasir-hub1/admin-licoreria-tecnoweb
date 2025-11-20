@@ -15,11 +15,10 @@
 
                 <form @submit.prevent="submit" class="space-y-6">
                     <TextInput
-                        :value="producto.codigo"
+                        :model-value="producto.codigo"
                         label="Código"
                         type="text"
                         name="codigo"
-                        readonly
                         disabled
                         hint="El código del producto no puede ser modificado"
                     />

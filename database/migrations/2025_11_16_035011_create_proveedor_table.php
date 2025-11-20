@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('nombre', 50)->nullable();
             $table->string('telefono', 20)->nullable();
             $table->string('nit', 20)->nullable();
-            $table->string('correo', 20)->nullable();
+            $table->string('correo', 50)->nullable();
             $table->string('direccion', 20)->nullable();
         });
     }

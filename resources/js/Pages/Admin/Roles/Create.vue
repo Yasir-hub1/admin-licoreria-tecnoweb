@@ -123,7 +123,6 @@ const getModuloIcon = (modulo) => {
         'Créditos': '💳',
         'Usuarios': '👤',
         'Roles': '🔐',
-        'Empleados': '👔',
         'Estadísticas': '📈',
         'Dashboard': '📊',
         'General': '⚙️'

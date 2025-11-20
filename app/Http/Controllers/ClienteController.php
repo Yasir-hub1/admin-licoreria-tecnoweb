@@ -23,6 +23,7 @@ class ClienteController extends BaseController
                 WHEN carnet_anverso IS NOT NULL OR carnet_reverso IS NOT NULL OR foto_luz IS NOT NULL OR foto_agua IS NOT NULL OR foto_garantia IS NOT NULL THEN 'Documentos Incompletos'
                 ELSE 'Sin Documentos'
             END as estado_verificacion_texto"))
+            ->orderBy('id', 'desc')
             ->paginate(15);
         return Inertia::render('Admin/Clientes/Index', [
             'clientes' => $clientes

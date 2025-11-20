@@ -38,6 +38,22 @@
                     </tbody>
                 </table>
             </div>
+
+            <div v-if="usuarios.links" class="mt-4 flex justify-center">
+                <nav class="flex gap-2">
+                    <Link
+                        v-for="(link, index) in usuarios.links"
+                        :key="index"
+                        :href="link.url || '#'"
+                        v-html="link.label"
+                        :class="[
+                            'px-3 py-2 border rounded',
+                            link.active ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50',
+                            !link.url ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                        ]"
+                    />
+                </nav>
+            </div>
         </div>
     </AdminLayout>
 </template>

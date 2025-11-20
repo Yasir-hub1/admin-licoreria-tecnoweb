@@ -105,6 +105,16 @@ class Usuario extends Authenticatable
         return $this->hasMany(Carrito::class, 'usuario_id');
     }
 
+    public function ventas()
+    {
+        return $this->hasMany(Venta::class, 'usuario_id');
+    }
+
+    public function proveedor()
+    {
+        return $this->hasOne(Proveedor::class, 'usuario_id');
+    }
+
     // Helper methods for roles
     public function hasRole($role)
     {
@@ -214,7 +224,7 @@ class Usuario extends Authenticatable
         // Verificar si tiene algún permiso de módulos administrativos (excluyendo dashboard)
         $permisos = $this->getPermisosSlugs();
         $modulosAdmin = ['productos', 'categorias', 'ventas', 'compras', 'clientes', 'proveedores',
-                        'inventario', 'creditos', 'usuarios', 'roles', 'empleados', 'estadisticas'];
+                        'inventario', 'creditos', 'usuarios', 'roles', 'estadisticas'];
 
         foreach ($permisos as $permiso) {
             foreach ($modulosAdmin as $modulo) {

@@ -14,8 +14,14 @@ class Proveedor extends Model
         'telefono',
         'nit',
         'correo',
-        'direccion'
+        'direccion',
+        'usuario_id'
     ];
+
+    public function usuario()
+    {
+        return $this->belongsTo(Usuario::class, 'usuario_id');
+    }
 
     public function compras()
     {

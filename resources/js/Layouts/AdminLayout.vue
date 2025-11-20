@@ -767,7 +767,6 @@ const pageTitle = computed(() => {
     if (url.includes('/creditos')) return 'Créditos';
     if (url.includes('/usuarios')) return 'Usuarios';
     if (url.includes('/roles')) return 'Roles';
-    if (url.includes('/empleados')) return 'Empleados';
     if (url.includes('/dashboard')) return 'Dashboard';
 
     return 'Panel Administrativo';
@@ -851,11 +850,6 @@ const menuItems = computed(() => {
         }
     }
 
-    // Empleados (solo si tiene acceso)
-    if (esPropietarioValue || tieneAccesoModulo('empleados')) {
-        items.push({ href: '/admin/empleados', icon: '👔', label: 'Empleados', description: 'Gestionar empleados', permiso: 'empleados.listar' });
-    }
-
     return items;
 });
 
@@ -887,9 +881,6 @@ const allSearchableItems = computed(() => {
     }
     if (esPropietarioValue || tienePermiso('inventario.ver')) {
         items.push({ href: '/admin/inventario/movimientos', icon: '📋', label: 'Movimientos de Inventario', description: 'Ver movimientos' });
-    }
-    if (esPropietarioValue || tienePermiso('empleados.crear')) {
-        items.push({ href: '/admin/empleados/create', icon: '➕', label: 'Nuevo Empleado', description: 'Registrar nuevo empleado' });
     }
 
     return items;

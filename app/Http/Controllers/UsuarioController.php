@@ -12,7 +12,7 @@ class UsuarioController extends Controller
 {
     public function index()
     {
-        $usuarios = Usuario::with('rol')->paginate(15);
+        $usuarios = Usuario::with('rol')->orderBy('id', 'desc')->paginate(15);
         return Inertia::render('Admin/Usuarios/Index', [
             'usuarios' => $usuarios
         ]);

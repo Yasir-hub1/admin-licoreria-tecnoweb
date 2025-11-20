@@ -9,7 +9,7 @@
                     Volver a Compras
                 </Link>
                 <Link
-                    v-if="puedeEditar && compra.estado !== 'validado'"
+                    v-if="!esProveedor && puedeEditar && compra.estado !== 'validado'"
                     :href="`/admin/compras/${compra.id}/edit`"
                     class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium"
                 >
@@ -63,7 +63,7 @@
                     </div>
                 </div>
 
-                <div class="mb-6 flex gap-3">
+                <div v-if="!esProveedor" class="mb-6 flex gap-3">
                     <form v-if="puedeValidar && compra.estado !== 'validado' && compra.estado !== 'cancelado'" @submit.prevent="validarCompra" class="inline">
                         <button
                             type="submit"
@@ -143,7 +143,8 @@ import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { usePermissions } from '@/composables/usePermissions';
 
 const props = defineProps({
-    compra: Object
+    compra: Object,
+    esProveedor: Boolean
 });
 
 const { tienePermiso } = usePermissions();

@@ -2,8 +2,11 @@
     <AdminLayout>
         <div class="container mx-auto px-4 py-8">
             <div class="flex justify-between items-center mb-6">
-                <h1 class="text-3xl font-bold">Compras</h1>
-                <Link v-if="puedeCrear" href="/admin/compras/create" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
+                <div>
+                    <h1 class="text-3xl font-bold">Compras</h1>
+                    <p v-if="esProveedor" class="text-sm text-gray-600 mt-1">Viendo solo las compras donde está involucrado como proveedor</p>
+                </div>
+                <Link v-if="puedeCrear && !esProveedor" href="/admin/compras/create" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
                     ➕ Nueva Compra
                 </Link>
             </div>
@@ -36,17 +39,33 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                                 <Link v-if="puedeVer" :href="`/admin/compras/${compra.id}`" class="text-blue-600 hover:text-blue-900">Ver</Link>
                                 <Link
-                                    v-if="puedeEditar && compra.estado !== 'validado'"
+                                    v-if="!esProveedor && puedeEditar && compra.estado !== 'validado'"
                                     :href="`/admin/compras/${compra.id}/edit`"
                                     class="text-indigo-600 hover:text-indigo-900"
                                 >
                                     Editar
                                 </Link>
-                                <button v-if="puedeEliminar && compra.estado !== 'validado'" @click="deleteItem(compra.id)" class="text-red-600 hover:text-red-900">Eliminar</button>
+                                <button v-if="!esProveedor && puedeEliminar && compra.estado !== 'validado'" @click="deleteItem(compra.id)" class="text-red-600 hover:text-red-900">Eliminar</button>
                             </td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <div v-if="compras.links" class="mt-4 flex justify-center">
+                <nav class="flex gap-2">
+                    <Link
+                        v-for="(link, index) in compras.links"
+                        :key="index"
+                        :href="link.url || '#'"
+                        v-html="link.label"
+                        :class="[
+                            'px-3 py-2 border rounded',
+                            link.active ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50',
+                            !link.url ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                        ]"
+                    />
+                </nav>
             </div>
         </div>
     </AdminLayout>
@@ -56,12 +75,16 @@ import { Link, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { usePermissions } from '@/composables/usePermissions';
 
-defineProps({ compras: Object });
 
 const { tienePermiso } = usePermissions();
 
+const props = defineProps({ 
+    compras: Object,
+    esProveedor: Boolean 
+});
+
 const puedeCrear = tienePermiso('compras.crear');
-const puedeVer = tienePermiso('compras.ver');
+const puedeVer = tienePermiso('compras.ver') || tienePermiso('compras.ver_propias');
 const puedeEditar = tienePermiso('compras.editar');
 const puedeEliminar = tienePermiso('compras.eliminar');
 

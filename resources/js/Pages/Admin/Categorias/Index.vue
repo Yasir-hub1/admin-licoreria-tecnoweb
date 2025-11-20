@@ -7,6 +7,20 @@
                     ➕ Nueva Categoría
                 </Link>
             </div>
+
+            <div v-if="$page.props.flash?.success" class="mb-4 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-start gap-3">
+                <svg class="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p>{{ $page.props.flash.success }}</p>
+            </div>
+
+            <div v-if="$page.props.flash?.error" class="mb-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex items-start gap-3">
+                <svg class="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p>{{ $page.props.flash.error }}</p>
+            </div>
             <div class="bg-white shadow rounded-lg overflow-hidden">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50"><tr>
@@ -26,6 +40,22 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <div v-if="categorias.links" class="mt-4 flex justify-center">
+                <nav class="flex gap-2">
+                    <Link
+                        v-for="(link, index) in categorias.links"
+                        :key="index"
+                        :href="link.url || '#'"
+                        v-html="link.label"
+                        :class="[
+                            'px-3 py-2 border rounded',
+                            link.active ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50',
+                            !link.url ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                        ]"
+                    />
+                </nav>
             </div>
         </div>
     </AdminLayout>

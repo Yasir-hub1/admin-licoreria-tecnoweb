@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Usuario;
 use App\Models\Rol;
 use App\Models\Cliente;
-use App\Models\Empleado;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -19,10 +18,9 @@ class UsuarioSeeder extends Seeder
     {
         // Obtener roles
         $rolPropietario = Rol::where('nombre', 'propietario')->first();
-        $rolEmpleado = Rol::where('nombre', 'empleado')->first();
         $rolCliente = Rol::where('nombre', 'cliente')->first();
 
-        if (!$rolPropietario || !$rolEmpleado || !$rolCliente) {
+        if (!$rolPropietario || !$rolCliente) {
             $this->command->error('Los roles no existen. Ejecuta primero RolSeeder.');
             return;
         }
@@ -39,30 +37,6 @@ class UsuarioSeeder extends Seeder
                 'id_rol' => $rolPropietario->id,
             ]
         );
-
-        // Crear usuario empleado (usar email más corto para correo)
-        $empleado = Usuario::updateOrCreate(
-            ['email' => 'empleado@tecnoweb.com'],
-            [
-                'nombre' => 'Empleado',
-                'correo' => 'empleado@tecno.com', // 19 caracteres - OK
-                'email' => 'empleado@tecnoweb.com',
-                'password' => Hash::make('empleado123'),
-                'estado' => 'activo',
-                'id_rol' => $rolEmpleado->id,
-            ]
-        );
-
-        // Crear registro de empleado
-        if ($empleado) {
-            Empleado::updateOrCreate(
-                ['usuario_id' => $empleado->id],
-                [
-                    'ci' => '12345678',
-                    'nombre' => 'Empleado',
-                ]
-            );
-        }
 
         // Crear usuario cliente de prueba
         $cliente = Usuario::updateOrCreate(
@@ -95,7 +69,6 @@ class UsuarioSeeder extends Seeder
 
         $this->command->info('Usuarios creados exitosamente:');
         $this->command->info('Propietario: admin@tecnoweb.com / admin123');
-        $this->command->info('Empleado: empleado@tecnoweb.com / empleado123');
         $this->command->info('Cliente: cliente@test.com / cliente123');
     }
 }

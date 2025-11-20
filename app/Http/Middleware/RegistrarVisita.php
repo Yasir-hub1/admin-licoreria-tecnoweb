@@ -54,7 +54,6 @@ class RegistrarVisita
             'admin/proveedores' => 'Proveedores',
             'admin/inventario' => 'Inventario',
             'admin/creditos' => 'Créditos',
-            'admin/empleados' => 'Empleados',
             'admin/usuarios' => 'Usuarios',
             'admin/roles' => 'Roles',
             'admin/contadores' => 'Contadores',

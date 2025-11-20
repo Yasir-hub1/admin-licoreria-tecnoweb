@@ -42,18 +42,22 @@
                     </div>
 
                     <div>
-                        <label class="block text-gray-700 font-bold mb-2">Empleado *</label>
-                        <select
-                            v-model="form.vendedor_id"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                            required
-                        >
-                            <option value="">Seleccione un empleado</option>
-                            <option v-for="empleado in empleados" :key="empleado.id" :value="empleado.id">
-                                {{ empleado.nombre }}
-                            </option>
-                        </select>
-                        <span v-if="form.errors.vendedor_id" class="text-red-500 text-sm">{{ form.errors.vendedor_id }}</span>
+                        <label class="block text-gray-700 font-bold mb-2">Usuario *</label>
+                        <div class="relative">
+                            <input
+                                :value="usuarioNombre"
+                                type="text"
+                                disabled
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                            />
+                            <div class="absolute right-3 top-2.5">
+                                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Usuario que realizó la venta</p>
+                        <span v-if="form.errors.usuario_id" class="text-red-500 text-sm">{{ form.errors.usuario_id }}</span>
                     </div>
 
                     <div>
@@ -223,13 +227,13 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { useForm, Link } from '@inertiajs/vue3';
+import { useForm, Link, usePage } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 
+const page = usePage();
 const props = defineProps({
     venta: Object,
     clientes: Array,
-    empleados: Array,
     productos: Array,
     stocks: Object
 });
@@ -237,7 +241,7 @@ const props = defineProps({
 const form = useForm({
     nro_venta: props.venta.nro_venta,
     cliente_id: props.venta.cliente_id,
-    vendedor_id: props.venta.vendedor_id,
+    usuario_id: props.venta.usuario_id || page.props.auth?.user?.id || '',
     fecha: props.venta.fecha ? new Date(props.venta.fecha).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     tipo: props.venta.tipo || 'contado',
     numero_cuotas: props.venta.numero_cuotas || null,
@@ -247,6 +251,11 @@ const form = useForm({
         cantidad: d.cantidad,
         precio_unitario: d.precio_unitario
     })) || []
+});
+
+// Obtener nombre del usuario
+const usuarioNombre = computed(() => {
+    return props.venta.usuario?.nombre || page.props.auth?.user?.nombre || 'Usuario';
 });
 
 const agregarProducto = () => {

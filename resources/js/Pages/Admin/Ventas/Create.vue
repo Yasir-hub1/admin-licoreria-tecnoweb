@@ -78,10 +78,10 @@
                     </div>
 
                     <div>
-                        <label class="block text-gray-700 font-bold mb-2">Empleado *</label>
+                        <label class="block text-gray-700 font-bold mb-2">Usuario *</label>
                         <div class="relative">
                             <input
-                                :value="empleadoNombre"
+                                :value="usuarioNombre"
                                 type="text"
                                 disabled
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
@@ -93,7 +93,7 @@
                             </div>
                         </div>
                         <p class="mt-1 text-xs text-gray-500">Asignado automáticamente según tu usuario</p>
-                        <span v-if="form.errors.vendedor_id" class="text-red-500 text-sm">{{ form.errors.vendedor_id }}</span>
+                        <span v-if="form.errors.usuario_id" class="text-red-500 text-sm">{{ form.errors.usuario_id }}</span>
                     </div>
 
                     <div>
@@ -264,14 +264,14 @@ import AdminLayout from '@/Layouts/AdminLayout.vue';
 const page = usePage();
 const props = defineProps({
     clientes: Array,
-    vendedor_id: Number,
+    usuario_id: Number,
     productos: Array,
     stocks: Object
 });
 
 const form = useForm({
     cliente_id: '',
-    vendedor_id: props.vendedor_id || '',
+    usuario_id: props.usuario_id || '',
     fecha: new Date().toISOString().split('T')[0],
     tipo: 'contado',
     numero_cuotas: null,
@@ -286,8 +286,8 @@ const mostrarSugerencias = ref(false);
 const buscandoClientes = ref(false);
 const timeoutBusqueda = ref(null);
 
-// Obtener nombre del empleado desde el usuario autenticado
-const empleadoNombre = computed(() => {
+// Obtener nombre del usuario autenticado
+const usuarioNombre = computed(() => {
     return page.props.auth?.user?.nombre || 'Usuario actual';
 });
 
@@ -342,9 +342,9 @@ const limpiarCliente = () => {
 };
 
 onMounted(() => {
-    // Si hay un vendedor_id, asegurarse de que esté en el form
-    if (props.vendedor_id) {
-        form.vendedor_id = props.vendedor_id;
+    // Si hay un usuario_id, asegurarse de que esté en el form
+    if (props.usuario_id) {
+        form.usuario_id = props.usuario_id;
     }
 });
 
