@@ -12,32 +12,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Eliminar la foreign key antigua
-        DB::statement('ALTER TABLE venta DROP CONSTRAINT IF EXISTS venta_vendedor_id_foreign');
-
-        // Migrar datos: obtener usuario_id desde empleado
-        DB::statement('
-            UPDATE venta 
-            SET vendedor_id = (
-                SELECT usuario_id 
-                FROM empleado 
-                WHERE empleado.id = venta.vendedor_id
-            )
-            WHERE vendedor_id IS NOT NULL 
-            AND EXISTS (
-                SELECT 1 
-                FROM empleado 
-                WHERE empleado.id = venta.vendedor_id 
-                AND empleado.usuario_id IS NOT NULL
-            )
-        ');
-
-        // Renombrar la columna usando SQL directo
-        DB::statement('ALTER TABLE venta RENAME COLUMN vendedor_id TO usuario_id');
-
-        // Crear la nueva foreign key a usuario
+        // Agregar la columna usuario_id a la tabla venta
         Schema::table('venta', function (Blueprint $table) {
-            $table->foreign('usuario_id')->references('id')->on('usuario');
+            $table->foreignId('usuario_id')->nullable()->after('cliente_id');
+        });
+
+        // Crear la foreign key a usuario
+        Schema::table('venta', function (Blueprint $table) {
+            $table->foreign('usuario_id')->references('id')->on('usuario')->onDelete('set null');
         });
     }
 
@@ -47,14 +29,13 @@ return new class extends Migration
     public function down(): void
     {
         // Eliminar la foreign key a usuario
-        DB::statement('ALTER TABLE venta DROP CONSTRAINT IF EXISTS venta_usuario_id_foreign');
-
-        // Renombrar de vuelta usando SQL directo
-        DB::statement('ALTER TABLE venta RENAME COLUMN usuario_id TO vendedor_id');
-
-        // Recrear la foreign key a empleado
         Schema::table('venta', function (Blueprint $table) {
-            $table->foreign('vendedor_id')->references('id')->on('empleado');
+            $table->dropForeign(['usuario_id']);
+        });
+
+        // Eliminar la columna usuario_id
+        Schema::table('venta', function (Blueprint $table) {
+            $table->dropColumn('usuario_id');
         });
     }
 };

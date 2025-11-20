@@ -21,7 +21,6 @@ return new class extends Migration
             $table->string('numero_cuotas', 20)->nullable();
             $table->string('estado', 10)->nullable();
             $table->foreignId('cliente_id')->nullable()->constrained('cliente');
-            $table->foreignId('vendedor_id')->nullable()->constrained('empleado');
         });
     }
 
