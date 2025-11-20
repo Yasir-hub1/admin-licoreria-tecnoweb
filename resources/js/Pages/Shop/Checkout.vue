@@ -182,10 +182,8 @@ import RadioInput from '@/Components/Form/RadioInput.vue';
 import Button from '@/Components/Button.vue';
 
 const metodoPagoOptions = [
-    { value: 'efectivo', label: 'Efectivo' },
-    { value: 'tarjeta', label: 'Tarjeta' },
-    { value: 'qr', label: 'QR / Transferencia' },
-    { value: 'cheque', label: 'Cheque' }
+    { value: 'efectivo', label: 'Efectivo', icon: '💵' },
+    { value: 'qr', label: 'QR PagoFácil', icon: '📱', description: 'Pago con código QR' }
 ];
 
 const tipoPagoOptions = computed(() => {

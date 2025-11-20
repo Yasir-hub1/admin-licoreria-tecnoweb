@@ -126,7 +126,7 @@ class CheckoutController extends Controller
 
         $request->validate([
             'tipo_pago' => 'required|in:contado,credito',
-            'metodo_pago' => 'required|string',
+            'metodo_pago' => 'required|in:efectivo,qr',
             'numero_cuotas' => 'required_if:tipo_pago,credito|integer|min:2|max:12'
         ]);
 
@@ -147,9 +147,17 @@ class CheckoutController extends Controller
         }
 
         try {
+            $metodoPago = $request->metodo_pago;
+            
             if ($request->tipo_pago === 'contado') {
-                $venta = $this->checkoutService->processContado($cart, $cliente);
+                $resultado = $this->checkoutService->processContado($cart, $cliente, $metodoPago);
                 $this->cartService->clear();
+
+                // Si requiere pasarela (QR), redirigir a página de confirmación
+                if ($metodoPago === 'qr' && isset($resultado['pago'])) {
+                    return redirect()->route('payment.confirm', ['id' => $resultado['pago']->id])
+                        ->with('success', 'Pago iniciado. Completa el proceso de pago.');
+                }
 
                 return redirect('/my-orders')
                     ->with('success', 'Compra realizada exitosamente');
@@ -160,8 +168,14 @@ class CheckoutController extends Controller
                 }
 
                 $numeroCuotas = $request->numero_cuotas ?? 2;
-                $resultado = $this->checkoutService->processCredito($cart, $cliente, $numeroCuotas);
+                $resultado = $this->checkoutService->processCredito($cart, $cliente, $numeroCuotas, $metodoPago);
                 $this->cartService->clear();
+
+                // Si requiere pasarela (QR), redirigir a confirmación
+                if ($metodoPago === 'qr' && isset($resultado['pago'])) {
+                    return redirect()->route('payment.confirm', ['id' => $resultado['pago']->id])
+                        ->with('success', 'Compra a crédito iniciada. Completa el proceso de pago.');
+                }
 
                 return redirect('/my-credits')
                     ->with('success', "Compra a crédito realizada exitosamente. {$numeroCuotas} cuotas generadas.");

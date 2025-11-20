@@ -85,7 +85,7 @@ class CustomerController extends Controller
     {
         $request->validate([
             'monto' => 'required|numeric|min:0',
-            'metodo' => 'required|string',
+            'metodo' => 'required|in:efectivo,qr',
             'nro_transaccion' => 'nullable|string',
             'observacion' => 'nullable|string'
         ]);
@@ -93,21 +93,68 @@ class CustomerController extends Controller
         $user = Auth::user();
         $cliente = $user->cliente;
 
+        if (!$cliente) {
+            return back()->with('error', 'No se encontró información de cliente');
+        }
+
         $credito = Credito::whereHas('venta', function($q) use ($cliente) {
             $q->where('cliente_id', $cliente->id);
-        })->findOrFail($id);
+        })->with('venta')->findOrFail($id);
 
         try {
-            $creditService = app(\App\Services\CreditService::class);
-            $creditService->registerPayment(
-                $credito->id,
-                $request->monto,
-                $request->metodo,
-                $request->nro_transaccion,
-                $request->observacion
-            );
+            $metodo = $request->metodo;
 
-            return back()->with('success', 'Pago registrado exitosamente');
+            // Si el método requiere pasarela (QR)
+            if ($metodo === 'qr') {
+                // Buscar la cuota pendiente
+                $cuotaPendiente = \App\Models\Pagos::where('credito_id', $credito->id)
+                    ->whereNull('fecha_pago')
+                    ->whereNotNull('numero_cuota')
+                    ->orderBy('numero_cuota', 'asc')
+                    ->first();
+
+                if (!$cuotaPendiente) {
+                    return back()->with('error', 'No hay cuotas pendientes para este crédito');
+                }
+
+                // Crear una venta temporal para el pago de la cuota (para usar con la pasarela)
+                $ventaTemporal = \App\Models\Venta::create([
+                    'nro_venta' => 'CUOTA-' . $credito->id . '-' . $cuotaPendiente->numero_cuota,
+                    'fecha' => now(),
+                    'tipo' => 'contado',
+                    'metodo_pago' => $metodo,
+                    'monto_total' => $request->monto,
+                    'saldo' => 0,
+                    'numero_cuotas' => 0,
+                    'estado' => 'pendiente',
+                    'estado_pago' => 'pendiente',
+                    'cliente_id' => $cliente->id,
+                    'vendedor_id' => null
+                ]);
+
+                // Procesar pago con pasarela QR
+                $paymentGatewayService = app(\App\Services\PaymentGatewayService::class);
+                $resultadoPago = $paymentGatewayService->processQRPayment($ventaTemporal, $cliente);
+
+                // Asociar el pago con la cuota
+                $cuotaPendiente->pago_id = $resultadoPago['pago']->id;
+                $cuotaPendiente->save();
+
+                return redirect()->route('payment.confirm', ['id' => $resultadoPago['pago']->id])
+                    ->with('success', 'Pago de cuota iniciado. Completa el proceso de pago.');
+            } else {
+                // Método efectivo
+                $creditService = app(\App\Services\CreditService::class);
+                $creditService->registerPayment(
+                    $credito->id,
+                    $request->monto,
+                    $metodo,
+                    $request->nro_transaccion,
+                    $request->observacion
+                );
+
+                return back()->with('success', 'Pago registrado exitosamente');
+            }
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -186,17 +233,17 @@ class CustomerController extends Controller
         }
 
         $cliente->update($updateData);
-        
+
         // Recargar el modelo para verificar documentos actualizados
         $cliente->refresh();
-        
+
         // Si todos los documentos están completos y el estado es pendiente o null, cambiar a en_revision
         // Solo cambiar si no está ya en revisión, aprobado o rechazado
-        if ($cliente->tieneDocumentosCompletos() && 
+        if ($cliente->tieneDocumentosCompletos() &&
             (!$cliente->estado_verificacion || $cliente->estado_verificacion === 'pendiente')) {
             $cliente->update(['estado_verificacion' => 'en_revision']);
         }
-        
+
         // Si se actualizaron documentos y estaba rechazado, volver a pendiente
         if (!empty($updateData) && $cliente->estado_verificacion === 'rechazado') {
             $cliente->update([

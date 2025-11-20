@@ -20,10 +20,99 @@ use App\Http\Controllers\VentaController;
 use App\Http\Controllers\CreditoController;
 use App\Http\Controllers\PagosController;
 use App\Http\Controllers\InventarioController;
+use App\Http\Controllers\PaymentController;
 
 // ====================================
 // RUTAS PÚBLICAS
 // ====================================
+
+// Ruta de prueba para pasarela de pagos (TEMPORAL - ELIMINAR EN PRODUCCIÓN)
+Route::get('/test-payment-gateway', function () {
+    $phone = request('phone', '75633655');
+    $amount = (float) request('amount', 0.01);
+
+    try {
+        // Buscar o crear cliente de prueba
+        $cliente = \App\Models\Cliente::where('telefono', $phone)->first();
+
+        if (!$cliente) {
+            $usuario = \App\Models\Usuario::whereHas('rol', function($q) {
+                $q->where('nombre', 'cliente');
+            })->first();
+
+            if (!$usuario) {
+                return response()->json(['error' => 'No se encontró ningún usuario cliente'], 400);
+            }
+
+            $cliente = \App\Models\Cliente::create([
+                'ci' => '12345678',
+                'nombre' => 'Cliente Prueba',
+                'telefono' => $phone,
+                'direccion' => 'Dirección de prueba',
+                'estado' => 'A',
+                'usuario_id' => $usuario->id
+            ]);
+        }
+
+        // Crear venta de prueba
+        $venta = \App\Models\Venta::create([
+            'nro_venta' => 'TEST-' . time(),
+            'fecha' => now(),
+            'tipo' => 'contado',
+            'metodo_pago' => 'qr',
+            'monto_total' => $amount,
+            'saldo' => 0,
+            'numero_cuotas' => 0,
+            'estado' => 'pendiente',
+            'estado_pago' => 'pendiente',
+            'cliente_id' => $cliente->id,
+            'vendedor_id' => null
+        ]);
+
+        // Procesar pago con pasarela QR
+        $paymentGatewayService = app(\App\Services\PaymentGatewayService::class);
+        $resultado = $paymentGatewayService->processQRPayment($venta, $cliente);
+
+        $pago = $resultado['pago'];
+        $result = $resultado['result'];
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pago procesado exitosamente',
+            'data' => [
+                'pago' => [
+                    'id' => $pago->id,
+                    'nro_pago' => $pago->nro_pago,
+                    'estado' => $pago->estado,
+                    'monto' => $pago->monto,
+                    'tipo_pago' => $pago->tipo_pago,
+                    'nro_transaccion' => $pago->nro_transaccion,
+                ],
+                'venta' => [
+                    'id' => $venta->id,
+                    'nro_venta' => $venta->nro_venta,
+                ],
+                'resultado_pagofacil' => [
+                    'error' => $result->error ?? null,
+                    'message' => $result->message ?? null,
+                    'values' => $result->values ?? null,
+                ],
+                'urls' => [
+                    'confirmacion' => url("/payment/confirm/{$pago->id}"),
+                    'check_status' => url("/payment/check-status/{$pago->id}"),
+                    'callback' => url('https://db17d557a193.ngrok-free.app/payment/callback'),
+                ]
+            ]
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+})->name('test.payment.gateway');
 
 // Página principal - redirige al login
 Route::get('/', function () {
@@ -67,6 +156,9 @@ Route::put('/cart/update', [CartController::class, 'update'])->name('cart.update
 Route::delete('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
 Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
 
+// Callback de pasarela de pagos (público)
+Route::post('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
+
 // ====================================
 // RUTAS AUTENTICADAS - CLIENTES
 // ====================================
@@ -88,10 +180,14 @@ Route::middleware(['auth', 'role:cliente'])->group(function () {
 
     // Perfil
     Route::get('/profile', [CustomerController::class, 'profile'])->name('customer.profile');
-    
+
     // Verificación de Crédito
     Route::get('/verificar-credito', [CustomerController::class, 'verificarCredito'])->name('customer.verificar-credito');
     Route::post('/verificar-credito', [CustomerController::class, 'subirDocumentos'])->name('customer.subir-documentos');
+
+    // Pagos
+    Route::get('/payment/confirm/{id}', [\App\Http\Controllers\PaymentController::class, 'confirm'])->name('payment.confirm');
+    Route::get('/payment/check-status/{id}', [\App\Http\Controllers\PaymentController::class, 'checkStatus'])->name('payment.check-status');
 });
 
 // ====================================

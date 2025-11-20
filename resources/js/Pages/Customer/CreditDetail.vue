@@ -172,11 +172,12 @@
                                 required
                             >
                                 <option value="">Seleccione</option>
-                                <option value="efectivo">Efectivo</option>
-                                <option value="tarjeta">Tarjeta</option>
-                                <option value="qr">QR / Transferencia</option>
-                                <option value="cheque">Cheque</option>
+                                <option value="efectivo">💵 Efectivo</option>
+                                <option value="qr">📱 QR PagoFácil</option>
                             </select>
+                            <p v-if="paymentForm.metodo === 'qr'" class="text-xs text-blue-600 mt-1">
+                                Se abrirá la pasarela de pagos para completar el proceso
+                            </p>
                         </div>
 
                         <div class="mb-4">
@@ -242,9 +243,17 @@ const paymentForm = useForm({
 const submitPayment = () => {
     paymentForm.post(`/credit/pay-cuota/${props.credito.id}`, {
         preserveScroll: true,
-        onSuccess: () => {
+        onSuccess: (page) => {
+            // Si es QR, la redirección se maneja en el backend
+            if (paymentForm.metodo === 'qr') {
+                // El backend redirige automáticamente a la página de confirmación
+                return;
+            }
             showPaymentModal.value = false;
             paymentForm.reset();
+        },
+        onError: () => {
+            // Mantener el modal abierto si hay error
         }
     });
 };

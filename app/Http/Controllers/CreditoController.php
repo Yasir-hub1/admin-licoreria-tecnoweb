@@ -129,7 +129,7 @@ class CreditoController extends Controller
     {
         $validated = $request->validate([
             'monto' => 'required|numeric|min:0',
-            'metodo' => 'required|string',
+            'metodo' => 'required|in:efectivo,qr',
             'nro_transaccion' => 'nullable|string',
             'observacion' => 'nullable|string'
         ]);

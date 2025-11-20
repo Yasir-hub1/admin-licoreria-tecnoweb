@@ -11,6 +11,7 @@ class Pagos extends Model
 
     protected $fillable = [
         'credito_id',
+        'pago_id',
         'numero_cuota',
         'fecha_pago',
         'monto',
@@ -26,5 +27,10 @@ class Pagos extends Model
     public function credito()
     {
         return $this->belongsTo(Credito::class, 'credito_id');
+    }
+
+    public function pago()
+    {
+        return $this->belongsTo(Pago::class, 'pago_id');
     }
 }

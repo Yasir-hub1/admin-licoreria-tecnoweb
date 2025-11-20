@@ -13,10 +13,12 @@ class Venta extends Model
         'nro_venta',
         'fecha',
         'tipo',
+        'metodo_pago',
         'monto_total',
         'saldo',
         'numero_cuotas',
         'estado',
+        'estado_pago',
         'cliente_id',
         'vendedor_id'
     ];
@@ -53,5 +55,15 @@ class Venta extends Model
     public function inventarios()
     {
         return $this->hasManyThrough(Inventario::class, DetalleVenta::class, 'venta_id', 'detalle_venta_id');
+    }
+
+    public function pago()
+    {
+        return $this->hasOne(Pago::class, 'venta_id');
+    }
+
+    public function pagos()
+    {
+        return $this->hasMany(Pago::class, 'venta_id');
     }
 }
