@@ -65,36 +65,30 @@ class HandleInertiaRequests extends Middleware
         $permisos = [];
         if ($user) {
             try {
-                // Asegurar que el rol esté cargado con eager loading
-                $user->loadMissing('rol.permisos');
-
-                // Debug: Log para verificar que el rol se cargó
-                Log::info('Usuario ID: ' . $user->id . ', Rol ID: ' . ($user->rol ? $user->rol->id : 'null'));
-
-                // Si el usuario tiene rol, obtener los slugs de los permisos
-                if ($user->rol) {
-                    // Cargar permisos si no están cargados
+                // Recargar siempre el rol y permisos para asegurar que estén actualizados
+                // Esto es importante porque los permisos pueden cambiar mientras el usuario está autenticado
+                $user->load(['rol.permisos']);
+                
+                // Verificar que el rol existe
+                if (!$user->rol) {
+                    Log::warning('Usuario ' . $user->id . ' no tiene rol asignado');
+                    $permisos = [];
+                } else {
+                    // Asegurar que los permisos estén cargados
                     if (!$user->rol->relationLoaded('permisos')) {
                         $user->rol->load('permisos');
                     }
-
-                    if ($user->rol->permisos) {
-                        $permisos = $user->rol->permisos->pluck('slug')->toArray();
-                        Log::info('Permisos cargados para usuario ' . $user->id . ': ' . json_encode($permisos));
-                    } else {
-                        Log::warning('Usuario ' . $user->id . ' tiene rol pero no tiene permisos cargados');
-                    }
-                } else {
-                    Log::warning('Usuario ' . $user->id . ' no tiene rol asignado');
+                    
+                    // Usar el método del modelo que ya maneja la carga correctamente
+                    $permisos = $user->getPermisosSlugs();
+                    
+                    Log::info('Permisos cargados para usuario ' . $user->id . ' (Rol: ' . $user->rol->nombre . '): ' . count($permisos) . ' permisos');
+                    Log::debug('Permisos: ' . json_encode($permisos));
                 }
             } catch (\Exception $e) {
-                // En caso de error, intentar método alternativo
                 Log::error('Error cargando permisos del usuario ' . $user->id . ': ' . $e->getMessage());
                 Log::error('Stack trace: ' . $e->getTraceAsString());
-                if ($user->rol) {
-                    $permisos = $user->getPermisosSlugs();
-                    Log::info('Permisos obtenidos por método alternativo: ' . json_encode($permisos));
-                }
+                $permisos = [];
             }
         }
 

@@ -58,6 +58,7 @@
     </AdminLayout>
 </template>
 <script setup>
+import { computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { usePermissions } from '@/composables/usePermissions';
@@ -66,10 +67,11 @@ defineProps({ usuarios: Object });
 
 const { tienePermiso } = usePermissions();
 
-const puedeCrear = tienePermiso('usuarios.crear');
-const puedeVer = tienePermiso('usuarios.ver');
-const puedeEditar = tienePermiso('usuarios.editar');
-const puedeEliminar = tienePermiso('usuarios.eliminar');
+// Hacer reactivos los permisos usando computed
+const puedeCrear = computed(() => tienePermiso('usuarios.crear'));
+const puedeVer = computed(() => tienePermiso('usuarios.ver'));
+const puedeEditar = computed(() => tienePermiso('usuarios.editar'));
+const puedeEliminar = computed(() => tienePermiso('usuarios.eliminar'));
 
 const deleteItem = (id) => {
     if(confirm('¿Está seguro de eliminar este usuario?')) {

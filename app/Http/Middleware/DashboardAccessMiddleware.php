@@ -24,9 +24,19 @@ class DashboardAccessMiddleware
         /** @var \App\Models\Usuario $user */
         $user = Auth::user();
 
-        // Solo propietario y empleado pueden acceder al dashboard
-        if (!$user->isPropietario() && !$user->isEmpleado()) {
-            // Redirigir a bienvenida si tiene acceso admin pero no es propietario/empleado
+        // Asegurar que el rol y permisos estén cargados antes de verificar
+        if (!$user->relationLoaded('rol')) {
+            $user->load('rol');
+        }
+        
+        if ($user->rol && !$user->rol->relationLoaded('permisos')) {
+            $user->rol->load('permisos');
+        }
+
+        // Verificar si puede acceder al dashboard
+        // Puede acceder si es propietario, empleado, o tiene el permiso dashboard.ver
+        if (!$user->puedeAccederDashboard() && !$user->tienePermiso('dashboard.ver')) {
+            // Redirigir a bienvenida si tiene acceso admin pero no puede acceder al dashboard
             if ($user->tieneAccesoAdmin()) {
                 return redirect('/admin/bienvenida');
             }

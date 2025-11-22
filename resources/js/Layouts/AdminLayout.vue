@@ -774,80 +774,64 @@ const pageTitle = computed(() => {
 
 const menuItems = computed(() => {
     const items = [];
-    const esPropietarioValue = esPropietario.value;
 
-    // Debug: Verificar qué permisos tiene el usuario
-    console.log('[AdminLayout] Calculando menú...');
-    console.log('[AdminLayout] Es propietario:', esPropietarioValue);
-    console.log('[AdminLayout] Permisos del usuario:', page.props.auth?.user?.permisos);
-    console.log('[AdminLayout] Rol del usuario:', page.props.auth?.user?.rol?.nombre);
-
-    // Dashboard - siempre visible si tiene acceso al admin
-    if (esPropietarioValue || tienePermiso('dashboard.ver')) {
+    // Dashboard - verificar permiso
+    if (tienePermiso('dashboard.ver')) {
         items.push({ href: '/admin/dashboard', icon: '📊', label: 'Dashboard', description: 'Panel principal', permiso: 'dashboard.ver' });
     }
 
     // Productos
-    if (esPropietarioValue || tieneAccesoModulo('productos')) {
+    if (tieneAccesoModulo('productos')) {
         items.push({ href: '/admin/productos', icon: '📦', label: 'Productos', description: 'Gestionar productos', permiso: 'productos.listar' });
     }
 
     // Categorías
-    if (esPropietarioValue || tieneAccesoModulo('categorias')) {
+    if (tieneAccesoModulo('categorias')) {
         items.push({ href: '/admin/categorias', icon: '🏷️', label: 'Categorías', description: 'Gestionar categorías', permiso: 'categorias.listar' });
     }
 
     // Clientes
-    if (esPropietarioValue || tieneAccesoModulo('clientes')) {
+    if (tieneAccesoModulo('clientes')) {
         items.push({ href: '/admin/clientes', icon: '👥', label: 'Clientes', description: 'Gestionar clientes', permiso: 'clientes.listar' });
-        if (esPropietarioValue || tienePermiso('clientes.ver')) {
+        if (tienePermiso('clientes.ver')) {
             items.push({ href: '/admin/clientes/verificar-documentos', icon: '📋', label: 'Verificar Documentos', description: 'Revisar documentos de crédito', permiso: 'clientes.ver' });
         }
     }
 
     // Ventas
-    if (esPropietarioValue || tieneAccesoModulo('ventas')) {
+    if (tieneAccesoModulo('ventas')) {
         items.push({ href: '/admin/ventas', icon: '💰', label: 'Ventas', description: 'Ver ventas', permiso: 'ventas.listar' });
     }
 
     // Compras
-    if (esPropietarioValue || tieneAccesoModulo('compras')) {
+    if (tieneAccesoModulo('compras')) {
         items.push({ href: '/admin/compras', icon: '🛒', label: 'Compras', description: 'Ver compras', permiso: 'compras.listar' });
     }
 
     // Proveedores
-    if (esPropietarioValue || tieneAccesoModulo('proveedores')) {
+    if (tieneAccesoModulo('proveedores')) {
         items.push({ href: '/admin/proveedores', icon: '🏢', label: 'Proveedores', description: 'Gestionar proveedores', permiso: 'proveedores.listar' });
     }
 
     // Inventario
-    if (esPropietarioValue || tieneAccesoModulo('inventario')) {
+    if (tieneAccesoModulo('inventario')) {
         items.push({ href: '/admin/inventario', icon: '📊', label: 'Inventario', description: 'Control de inventario', permiso: 'inventario.listar' });
     }
 
     // Créditos
-    if (esPropietarioValue || tieneAccesoModulo('creditos')) {
+    if (tieneAccesoModulo('creditos')) {
         items.push({ href: '/admin/creditos', icon: '💳', label: 'Créditos', description: 'Gestionar créditos', permiso: 'creditos.listar' });
     }
 
-    // Solo propietario puede ver estos módulos
-    if (esPropietarioValue) {
-        items.push(
-            { href: '/admin/estadisticas', icon: '📊', label: 'Estadísticas', description: 'Reportes y análisis', permiso: 'estadisticas.ver' },
-            { href: '/admin/usuarios', icon: '👤', label: 'Usuarios', description: 'Gestionar usuarios', permiso: 'usuarios.listar' },
-            { href: '/admin/roles', icon: '🔐', label: 'Roles', description: 'Gestionar roles', permiso: 'roles.listar' }
-        );
-    } else {
-        // Para otros roles, verificar permisos específicos
-        if (tieneAccesoModulo('estadisticas')) {
-            items.push({ href: '/admin/estadisticas', icon: '📊', label: 'Estadísticas', description: 'Reportes y análisis', permiso: 'estadisticas.ver' });
-        }
-        if (tieneAccesoModulo('usuarios')) {
-            items.push({ href: '/admin/usuarios', icon: '👤', label: 'Usuarios', description: 'Gestionar usuarios', permiso: 'usuarios.listar' });
-        }
-        if (tieneAccesoModulo('roles')) {
-            items.push({ href: '/admin/roles', icon: '🔐', label: 'Roles', description: 'Gestionar roles', permiso: 'roles.listar' });
-        }
+    // Estadísticas, Usuarios y Roles - verificar permisos
+    if (tieneAccesoModulo('estadisticas')) {
+        items.push({ href: '/admin/estadisticas', icon: '📊', label: 'Estadísticas', description: 'Reportes y análisis', permiso: 'estadisticas.ver' });
+    }
+    if (tieneAccesoModulo('usuarios')) {
+        items.push({ href: '/admin/usuarios', icon: '👤', label: 'Usuarios', description: 'Gestionar usuarios', permiso: 'usuarios.listar' });
+    }
+    if (tieneAccesoModulo('roles')) {
+        items.push({ href: '/admin/roles', icon: '🔐', label: 'Roles', description: 'Gestionar roles', permiso: 'roles.listar' });
     }
 
     return items;
@@ -855,31 +839,30 @@ const menuItems = computed(() => {
 
 const allSearchableItems = computed(() => {
     const items = [...menuItems.value];
-    const esPropietarioValue = esPropietario.value;
 
-    // Agregar acciones según permisos
-    if (esPropietarioValue || tienePermiso('productos.crear')) {
+    // Agregar acciones según permisos (siempre verificar permisos, incluso para propietarios)
+    if (tienePermiso('productos.crear')) {
         items.push({ href: '/admin/productos/create', icon: '➕', label: 'Nuevo Producto', description: 'Crear nuevo producto' });
     }
-    if (esPropietarioValue || tienePermiso('ventas.crear')) {
+    if (tienePermiso('ventas.crear')) {
         items.push({ href: '/admin/ventas/create', icon: '➕', label: 'Nueva Venta', description: 'Registrar nueva venta' });
     }
-    if (esPropietarioValue || tienePermiso('compras.crear')) {
+    if (tienePermiso('compras.crear')) {
         items.push({ href: '/admin/compras/create', icon: '➕', label: 'Nueva Compra', description: 'Registrar nueva compra' });
     }
-    if (esPropietarioValue || tienePermiso('clientes.crear')) {
+    if (tienePermiso('clientes.crear')) {
         items.push({ href: '/admin/clientes/create', icon: '➕', label: 'Nuevo Cliente', description: 'Registrar nuevo cliente' });
     }
-    if (esPropietarioValue || tienePermiso('clientes.ver')) {
+    if (tienePermiso('clientes.ver')) {
         items.push({ href: '/admin/clientes/verificar-documentos', icon: '📋', label: 'Verificar Documentos', description: 'Revisar documentos de crédito' });
     }
-    if (esPropietarioValue || tienePermiso('categorias.crear')) {
+    if (tienePermiso('categorias.crear')) {
         items.push({ href: '/admin/categorias/create', icon: '➕', label: 'Nueva Categoría', description: 'Crear nueva categoría' });
     }
-    if (esPropietarioValue || tienePermiso('proveedores.crear')) {
+    if (tienePermiso('proveedores.crear')) {
         items.push({ href: '/admin/proveedores/create', icon: '➕', label: 'Nuevo Proveedor', description: 'Registrar nuevo proveedor' });
     }
-    if (esPropietarioValue || tienePermiso('inventario.ver')) {
+    if (tienePermiso('inventario.ver')) {
         items.push({ href: '/admin/inventario/movimientos', icon: '📋', label: 'Movimientos de Inventario', description: 'Ver movimientos' });
     }
 

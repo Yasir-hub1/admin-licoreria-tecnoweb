@@ -71,10 +71,10 @@
     </AdminLayout>
 </template>
 <script setup>
+import { computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { usePermissions } from '@/composables/usePermissions';
-
 
 const { tienePermiso } = usePermissions();
 
@@ -83,10 +83,11 @@ const props = defineProps({
     esProveedor: Boolean 
 });
 
-const puedeCrear = tienePermiso('compras.crear');
-const puedeVer = tienePermiso('compras.ver') || tienePermiso('compras.ver_propias');
-const puedeEditar = tienePermiso('compras.editar');
-const puedeEliminar = tienePermiso('compras.eliminar');
+// Hacer reactivos los permisos usando computed
+const puedeCrear = computed(() => tienePermiso('compras.crear'));
+const puedeVer = computed(() => tienePermiso('compras.ver') || tienePermiso('compras.ver_propias'));
+const puedeEditar = computed(() => tienePermiso('compras.editar'));
+const puedeEliminar = computed(() => tienePermiso('compras.eliminar'));
 
 const deleteItem = (id) => {
     if(confirm('¿Está seguro de eliminar esta compra?')) {

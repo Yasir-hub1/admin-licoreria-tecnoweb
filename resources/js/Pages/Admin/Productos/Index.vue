@@ -74,6 +74,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import Button from '@/Components/Button.vue';
@@ -85,10 +86,11 @@ defineProps({
 
 const { tienePermiso } = usePermissions();
 
-const puedeCrear = tienePermiso('productos.crear');
-const puedeVer = tienePermiso('productos.ver');
-const puedeEditar = tienePermiso('productos.editar');
-const puedeEliminar = tienePermiso('productos.eliminar');
+// Hacer reactivos los permisos usando computed
+const puedeCrear = computed(() => tienePermiso('productos.crear'));
+const puedeVer = computed(() => tienePermiso('productos.ver'));
+const puedeEditar = computed(() => tienePermiso('productos.editar'));
+const puedeEliminar = computed(() => tienePermiso('productos.eliminar'));
 
 const deleteProducto = (id) => {
     if (confirm('¿Está seguro de eliminar este producto?')) {

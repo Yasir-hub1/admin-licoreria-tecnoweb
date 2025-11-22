@@ -9,6 +9,7 @@ class BaseController extends Controller
 {
     /**
      * Verificar si el usuario tiene un permiso específico
+     * Ahora siempre verifica los permisos asignados, incluso para propietarios
      */
     protected function verificarPermiso($permiso)
     {
@@ -19,11 +20,16 @@ class BaseController extends Controller
             abort(403, 'No autenticado');
         }
 
-        // Propietario tiene todos los permisos
-        if ($user->isPropietario()) {
-            return true;
+        // Asegurar que el rol y permisos estén cargados antes de verificar
+        if (!$user->relationLoaded('rol')) {
+            $user->load('rol');
+        }
+        
+        if ($user->rol && !$user->rol->relationLoaded('permisos')) {
+            $user->rol->load('permisos');
         }
 
+        // Siempre verificar el permiso asignado, incluso para propietarios
         if (!$user->tienePermiso($permiso)) {
             abort(403, 'No tienes permisos para realizar esta acción');
         }

@@ -244,7 +244,7 @@ const form = useForm({
     usuario_id: props.venta.usuario_id || page.props.auth?.user?.id || '',
     fecha: props.venta.fecha ? new Date(props.venta.fecha).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     tipo: props.venta.tipo || 'contado',
-    numero_cuotas: props.venta.numero_cuotas || null,
+    numero_cuotas: (props.venta.tipo === 'credito' && props.venta.numero_cuotas) ? props.venta.numero_cuotas : null,
     estado: props.venta.estado || 'pendiente',
     detalles: props.venta.detalles?.map(d => ({
         producto_id: d.producto_id,
@@ -289,6 +289,9 @@ const getStock = (productoId) => {
 const onTipoChange = () => {
     if (form.tipo === 'contado') {
         form.numero_cuotas = null;
+    } else if (form.tipo === 'credito' && !form.numero_cuotas) {
+        // Si cambia a crédito y no tiene número de cuotas, establecer un valor por defecto
+        form.numero_cuotas = 2;
     }
 };
 
@@ -299,6 +302,11 @@ const total = computed(() => {
 });
 
 const submit = () => {
+    // Asegurar que numero_cuotas sea null si el tipo es contado
+    if (form.tipo === 'contado') {
+        form.numero_cuotas = null;
+    }
+    
     form.put(`/admin/ventas/${props.venta.id}`);
 };
 </script>

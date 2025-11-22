@@ -61,6 +61,7 @@
     </AdminLayout>
 </template>
 <script setup>
+import { computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { usePermissions } from '@/composables/usePermissions';
@@ -69,10 +70,11 @@ defineProps({ categorias: Object });
 
 const { tienePermiso } = usePermissions();
 
-const puedeCrear = tienePermiso('categorias.crear');
-const puedeVer = tienePermiso('categorias.ver');
-const puedeEditar = tienePermiso('categorias.editar');
-const puedeEliminar = tienePermiso('categorias.eliminar');
+// Hacer reactivos los permisos usando computed
+const puedeCrear = computed(() => tienePermiso('categorias.crear'));
+const puedeVer = computed(() => tienePermiso('categorias.ver'));
+const puedeEditar = computed(() => tienePermiso('categorias.editar'));
+const puedeEliminar = computed(() => tienePermiso('categorias.eliminar'));
 
 const deleteItem = (id) => {
     if(confirm('¿Está seguro de eliminar esta categoría?')) {

@@ -8,10 +8,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 
-class UsuarioController extends Controller
+class UsuarioController extends BaseController
 {
     public function index()
     {
+        // El middleware ya verifica usuarios.listar, pero verificamos aquí también por seguridad
+        $this->verificarPermiso('usuarios.listar');
+        
         $usuarios = Usuario::with('rol')->orderBy('id', 'desc')->paginate(15);
         return Inertia::render('Admin/Usuarios/Index', [
             'usuarios' => $usuarios
@@ -20,6 +23,9 @@ class UsuarioController extends Controller
 
     public function create()
     {
+        // El middleware ya verifica usuarios.crear, pero verificamos aquí también por seguridad
+        $this->verificarPermiso('usuarios.crear');
+        
         $roles = Rol::all();
         return Inertia::render('Admin/Usuarios/Create', [
             'roles' => $roles
@@ -28,6 +34,9 @@ class UsuarioController extends Controller
 
     public function store(Request $request)
     {
+        // El middleware ya verifica usuarios.crear, pero verificamos aquí también por seguridad
+        $this->verificarPermiso('usuarios.crear');
+        
         $validated = $request->validate([
             'nombre' => 'required|string|max:50',
             'email' => 'required|email|unique:usuario,email|unique:usuario,correo',
@@ -47,6 +56,9 @@ class UsuarioController extends Controller
 
     public function show(string $id)
     {
+        // El middleware ya verifica usuarios.ver, pero verificamos aquí también por seguridad
+        $this->verificarPermiso('usuarios.ver');
+        
         $usuario = Usuario::with('rol')->findOrFail($id);
         return Inertia::render('Admin/Usuarios/Show', [
             'usuario' => $usuario
@@ -55,6 +67,9 @@ class UsuarioController extends Controller
 
     public function edit(string $id)
     {
+        // El middleware ya verifica usuarios.editar, pero verificamos aquí también por seguridad
+        $this->verificarPermiso('usuarios.editar');
+        
         $usuario = Usuario::findOrFail($id);
         $roles = Rol::all();
         return Inertia::render('Admin/Usuarios/Edit', [
@@ -65,6 +80,9 @@ class UsuarioController extends Controller
 
     public function update(Request $request, string $id)
     {
+        // El middleware ya verifica usuarios.editar, pero verificamos aquí también por seguridad
+        $this->verificarPermiso('usuarios.editar');
+        
         $usuario = Usuario::findOrFail($id);
 
         $validated = $request->validate([
@@ -90,6 +108,9 @@ class UsuarioController extends Controller
 
     public function destroy(string $id)
     {
+        // El middleware ya verifica usuarios.eliminar, pero verificamos aquí también por seguridad
+        $this->verificarPermiso('usuarios.eliminar');
+        
         $usuario = Usuario::findOrFail($id);
         $usuario->delete();
 

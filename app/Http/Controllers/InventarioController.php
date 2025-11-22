@@ -8,10 +8,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
-class InventarioController extends Controller
+class InventarioController extends BaseController
 {
     public function index()
     {
+        $this->verificarPermiso('inventario.listar');
+        
         $inventoryService = app(\App\Services\InventoryService::class);
         $productos = Producto::with('categoria')->get()->map(function($producto) use ($inventoryService) {
             $producto->stock_actual = $inventoryService->calcularStock($producto->id);
@@ -25,6 +27,8 @@ class InventarioController extends Controller
 
     public function movimientos()
     {
+        $this->verificarPermiso('inventario.ver');
+        
         $movimientos = Inventario::with(['usuario', 'producto', 'detalleCompra', 'detalleVenta'])
             ->orderBy('id', 'desc')
             ->paginate(20);
@@ -35,6 +39,8 @@ class InventarioController extends Controller
 
     public function ajuste(Request $request)
     {
+        $this->verificarPermiso('inventario.ajustar');
+        
         $validated = $request->validate([
             'producto_id' => 'required|exists:producto,id',
             'tipo_movimiento' => 'required|in:INGRESO,SALIDA',
@@ -91,6 +97,8 @@ class InventarioController extends Controller
 
     public function kardex($producto_id)
     {
+        $this->verificarPermiso('inventario.ver');
+        
         $producto = Producto::findOrFail($producto_id);
         $inventoryService = app(\App\Services\InventoryService::class);
         $movimientos = $inventoryService->getKardex($producto_id);

@@ -88,8 +88,12 @@ class RolController extends Controller
         $permisosIds = $validated['permisos'] ?? [];
         $rol->sincronizarPermisos($permisosIds);
 
+        // Nota: Los usuarios autenticados necesitarán cerrar sesión y volver a iniciar
+        // para obtener los nuevos permisos, o podemos forzar una recarga en el siguiente request
+        // El middleware HandleInertiaRequests ya recarga los permisos en cada request
+
         return redirect('/admin/roles')
-            ->with('success', 'Rol actualizado exitosamente');
+            ->with('success', 'Rol actualizado exitosamente. Los usuarios con este rol verán los cambios en su próxima solicitud.');
     }
 
     public function destroy(string $id)

@@ -97,6 +97,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { usePermissions } from '@/composables/usePermissions';
@@ -107,8 +108,9 @@ defineProps({
 
 const { tienePermiso } = usePermissions();
 
-const puedeEditar = tienePermiso('proveedores.editar');
-const puedeVerCompras = tienePermiso('compras.ver');
-const puedeVerUsuario = tienePermiso('usuarios.ver');
+// Hacer reactivos los permisos usando computed
+const puedeEditar = computed(() => tienePermiso('proveedores.editar'));
+const puedeVerCompras = computed(() => tienePermiso('compras.ver'));
+const puedeVerUsuario = computed(() => tienePermiso('usuarios.ver'));
 </script>
 

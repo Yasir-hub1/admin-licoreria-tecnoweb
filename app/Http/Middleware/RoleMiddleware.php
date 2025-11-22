@@ -20,13 +20,22 @@ class RoleMiddleware
         }
 
         $user = auth()->user();
+        
+        // Asegurar que el rol esté cargado
+        if (!$user->relationLoaded('rol')) {
+            $user->load('rol');
+        }
 
+        \Illuminate\Support\Facades\Log::info("[RoleMiddleware] Verificando roles: " . implode(', ', $roles) . " para usuario {$user->id} (Rol: " . ($user->rol ? $user->rol->nombre : 'sin rol') . ")");
+        
         foreach ($roles as $role) {
             if ($user->hasRole($role)) {
+                \Illuminate\Support\Facades\Log::info("[RoleMiddleware] Usuario {$user->id} tiene rol: {$role}");
                 return $next($request);
             }
         }
 
+        \Illuminate\Support\Facades\Log::warning("[RoleMiddleware] Usuario {$user->id} (Rol: " . ($user->rol ? $user->rol->nombre : 'sin rol') . ") NO tiene ninguno de los roles requeridos: " . implode(', ', $roles));
         abort(403, 'No tienes permisos para acceder a esta página');
     }
 }

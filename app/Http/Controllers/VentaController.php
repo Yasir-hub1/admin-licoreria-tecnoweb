@@ -7,10 +7,13 @@ use App\Models\Cliente;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-class VentaController extends Controller
+class VentaController extends BaseController
 {
     public function index()
     {
+        // Verificar permiso para listar ventas
+        $this->verificarPermiso('ventas.listar');
+        
         $ventas = Venta::with(['cliente', 'usuario', 'credito'])->orderBy('id', 'desc')->paginate(15);
 
         // Calcular estado real basado en saldo pendiente
@@ -29,6 +32,9 @@ class VentaController extends Controller
 
     public function create()
     {
+        // Verificar permiso para crear ventas
+        $this->verificarPermiso('ventas.crear');
+        
         $clientes = Cliente::where('estado', 'A')->get();
         $productos = \App\Models\Producto::with('categoria')->get();
 
@@ -68,6 +74,9 @@ class VentaController extends Controller
 
     public function store(Request $request)
     {
+        // Verificar permiso para crear ventas
+        $this->verificarPermiso('ventas.crear');
+        
         $validated = $request->validate([
             'cliente_id' => 'required|exists:cliente,id',
             'usuario_id' => 'required|exists:usuario,id',
@@ -159,6 +168,9 @@ class VentaController extends Controller
 
     public function show(string $id)
     {
+        // Verificar permiso para ver ventas
+        $this->verificarPermiso('ventas.ver');
+        
         $venta = Venta::with([
             'cliente',
             'usuario',
@@ -220,7 +232,10 @@ class VentaController extends Controller
 
     public function edit(string $id)
     {
-        $venta = Venta::with('detalles.producto')->findOrFail($id);
+        // Verificar permiso para editar ventas
+        $this->verificarPermiso('ventas.editar');
+        
+        $venta = Venta::with(['detalles.producto', 'usuario', 'cliente'])->findOrFail($id);
         $clientes = Cliente::where('estado', 'A')->get();
         $productos = \App\Models\Producto::with('categoria')->get();
 
@@ -241,37 +256,78 @@ class VentaController extends Controller
 
     public function update(Request $request, string $id)
     {
+        // Verificar permiso para editar ventas
+        $this->verificarPermiso('ventas.editar');
+        
         $venta = Venta::findOrFail($id);
 
-        // No permitir editar ventas completadas que ya tienen inventario
-        if ($venta->detalles()->whereHas('inventarios')->exists()) {
-            return back()->with('error', 'No se puede editar una venta que ya tiene movimientos de inventario');
+        // No permitir editar ventas a crédito que ya tienen pagos realizados
+        if ($venta->tipo === 'credito' && $venta->credito) {
+            $pagosRealizados = \App\Models\Pagos::where('credito_id', $venta->credito->id)
+                ->whereNotNull('fecha_pago')
+                ->exists();
+            
+            if ($pagosRealizados) {
+                return back()->with('error', 'No se puede editar una venta a crédito que ya tiene pagos realizados');
+            }
         }
 
-        $validated = $request->validate([
+        // Preparar datos para validación
+        $data = $request->all();
+        
+        // Si el tipo es contado, forzar numero_cuotas a null
+        if (($data['tipo'] ?? '') === 'contado') {
+            $data['numero_cuotas'] = null;
+        }
+
+        $validated = validator($data, [
             'nro_venta' => 'required|string|max:50',
             'cliente_id' => 'required|exists:cliente,id',
             'usuario_id' => 'required|exists:usuario,id',
             'fecha' => 'required|date',
             'tipo' => 'required|in:contado,credito',
-            'numero_cuotas' => 'nullable|integer|min:2|max:12',
+            'numero_cuotas' => [
+                'nullable',
+                function ($attribute, $value, $fail) use ($data) {
+                    if (($data['tipo'] ?? '') === 'credito') {
+                        if (is_null($value) || $value === '') {
+                            $fail('El número de cuotas es requerido para ventas a crédito.');
+                        } elseif (!is_numeric($value) || (int)$value < 2 || (int)$value > 12) {
+                            $fail('El número de cuotas debe ser un número entre 2 y 12.');
+                        }
+                    }
+                },
+            ],
             'estado' => 'required|in:pendiente,completado,cancelado',
             'detalles' => 'required|array|min:1',
             'detalles.*.producto_id' => 'required|exists:producto,id',
             'detalles.*.cantidad' => 'required|integer|min:1',
             'detalles.*.precio_unitario' => 'required|numeric|min:0',
-        ]);
+        ])->validate();
 
         try {
             $inventoryService = app(\App\Services\InventoryService::class);
+            $cliente = Cliente::findOrFail($validated['cliente_id']);
 
-            // Verificar stock
+            // Obtener detalles antiguos con sus inventarios antes de eliminarlos
+            $detallesAntiguos = $venta->detalles()->with('inventarios')->get();
+
+            // Verificar stock (considerando que vamos a revertir los movimientos antiguos)
             foreach ($validated['detalles'] as $detalle) {
+                // Calcular stock disponible considerando que revertiremos los movimientos antiguos
                 $stockActual = $inventoryService->calcularStock($detalle['producto_id']);
-                if ($stockActual < $detalle['cantidad']) {
+                
+                // Sumar las cantidades que se revertirán de los detalles antiguos del mismo producto
+                $cantidadARevertir = $detallesAntiguos
+                    ->where('producto_id', $detalle['producto_id'])
+                    ->sum('cantidad');
+                
+                $stockDisponible = $stockActual + $cantidadARevertir;
+                
+                if ($stockDisponible < $detalle['cantidad']) {
                     $producto = \App\Models\Producto::find($detalle['producto_id']);
                     return back()->withInput()->with('error',
-                        "El producto {$producto->nombre} no tiene stock suficiente. Disponible: {$stockActual} unidades");
+                        "El producto {$producto->nombre} no tiene stock suficiente. Disponible: {$stockDisponible} unidades");
                 }
             }
 
@@ -281,7 +337,30 @@ class VentaController extends Controller
                 $total += $detalle['cantidad'] * $detalle['precio_unitario'];
             }
 
-            \Illuminate\Support\Facades\DB::transaction(function () use ($venta, $validated, $total) {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($venta, $validated, $total, $detallesAntiguos, $inventoryService, $cliente) {
+                // Revertir movimientos de inventario antiguos (crear INGRESO para compensar SALIDAS)
+                // Esto debe hacerse ANTES de eliminar los detalles porque tienen onDelete('cascade')
+                foreach ($detallesAntiguos as $detalleAntiguo) {
+                    // Obtener todos los movimientos de inventario relacionados a este detalle
+                    $movimientosInventario = \App\Models\Inventario::where('detalle_venta_id', $detalleAntiguo->id)->get();
+                    
+                    foreach ($movimientosInventario as $movimiento) {
+                        // Si es una SALIDA, crear un INGRESO para revertirla
+                        if ($movimiento->tipo_movimiento === 'SALIDA') {
+                            $inventoryService->registrarMovimiento([
+                                'tipo_movimiento' => 'INGRESO',
+                                'cantidad' => $movimiento->cantidad,
+                                'fecha' => $validated['fecha'],
+                                'glosa' => "Reversión de venta #{$venta->nro_venta} - Edición",
+                                'producto_id' => $movimiento->producto_id
+                            ]);
+                        }
+                    }
+                }
+
+                // Eliminar detalles antiguos (los movimientos de inventario se eliminarán automáticamente por cascade)
+                $venta->detalles()->delete();
+
                 // Actualizar venta
                 $venta->update([
                     'nro_venta' => $validated['nro_venta'],
@@ -295,17 +374,33 @@ class VentaController extends Controller
                     'usuario_id' => $validated['usuario_id']
                 ]);
 
-                // Eliminar detalles antiguos
-                $venta->detalles()->delete();
-
-                // Crear nuevos detalles
+                // Crear nuevos detalles y sus movimientos de inventario
                 foreach ($validated['detalles'] as $detalle) {
-                    \App\Models\DetalleVenta::create([
+                    $detalleVenta = \App\Models\DetalleVenta::create([
                         'venta_id' => $venta->id,
                         'producto_id' => $detalle['producto_id'],
                         'cantidad' => $detalle['cantidad'],
                         'precio_unitario' => $detalle['precio_unitario'],
                         'subtotal' => $detalle['cantidad'] * $detalle['precio_unitario']
+                    ]);
+
+                    // Registrar movimiento de inventario
+                    $inventoryService->registrarMovimiento([
+                        'tipo_movimiento' => 'SALIDA',
+                        'cantidad' => $detalle['cantidad'],
+                        'fecha' => $validated['fecha'],
+                        'glosa' => "Venta #{$venta->nro_venta} - Cliente {$cliente->nombre}",
+                        'producto_id' => $detalle['producto_id'],
+                        'detalle_venta_id' => $detalleVenta->id
+                    ]);
+                }
+
+                // Si es crédito y ya existe un crédito, actualizarlo
+                if ($validated['tipo'] === 'credito' && $venta->credito) {
+                    $venta->credito->update([
+                        'monto_total' => $total,
+                        'saldo' => $total,
+                        'numero_cuotas' => $validated['numero_cuotas'] ?? 2
                     ]);
                 }
             });
@@ -320,6 +415,9 @@ class VentaController extends Controller
 
     public function destroy(string $id)
     {
+        // Verificar permiso para eliminar ventas
+        $this->verificarPermiso('ventas.eliminar');
+        
         $venta = Venta::findOrFail($id);
         $venta->delete();
 

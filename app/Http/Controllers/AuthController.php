@@ -57,11 +57,19 @@ class AuthController extends Controller
         }
 
         if ($passwordValid) {
+            // Cargar rol y permisos antes de hacer login
+            $usuario->load('rol.permisos');
+            
             Auth::login($usuario, $request->boolean('remember'));
             $request->session()->regenerate();
 
             /** @var \App\Models\Usuario $user */
             $user = Auth::user();
+
+            // Asegurar que el rol y permisos estén cargados
+            if ($user && !$user->relationLoaded('rol')) {
+                $user->load('rol.permisos');
+            }
 
             // Redirigir según el rol y permisos
             if ($user) {

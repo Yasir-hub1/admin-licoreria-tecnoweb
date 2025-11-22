@@ -18,6 +18,7 @@
     </AdminLayout>
 </template>
 <script setup>
+import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { usePermissions } from '@/composables/usePermissions';
@@ -26,6 +27,7 @@ defineProps({ usuario: Object });
 
 const { tienePermiso } = usePermissions();
 
-const puedeEditar = tienePermiso('usuarios.editar');
+// Hacer reactivos los permisos usando computed
+const puedeEditar = computed(() => tienePermiso('usuarios.editar'));
 </script>
 

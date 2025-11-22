@@ -118,6 +118,11 @@ class Usuario extends Authenticatable
     // Helper methods for roles
     public function hasRole($role)
     {
+        // Asegurar que el rol esté cargado
+        if (!$this->relationLoaded('rol')) {
+            $this->load('rol');
+        }
+        
         return $this->rol && $this->rol->nombre === $role;
     }
 
@@ -144,18 +149,25 @@ class Usuario extends Authenticatable
     /**
      * Verificar si el usuario tiene un permiso específico
      * Verifica a través de su rol
+     * Ahora siempre verifica los permisos asignados, incluso para propietarios
      */
     public function tienePermiso($permiso)
     {
+        // Asegurar que el rol esté cargado
+        if (!$this->relationLoaded('rol')) {
+            $this->load('rol');
+        }
+
         if (!$this->rol) {
             return false;
         }
 
-        // Si es propietario, tiene todos los permisos
-        if ($this->isPropietario()) {
-            return true;
+        // Asegurar que los permisos estén cargados en el rol
+        if (!$this->rol->relationLoaded('permisos')) {
+            $this->rol->load('permisos');
         }
 
+        // Siempre verificar el permiso asignado, incluso para propietarios
         return $this->rol->tienePermiso($permiso);
     }
 
@@ -190,6 +202,11 @@ class Usuario extends Authenticatable
      */
     public function getPermisos()
     {
+        // Asegurar que el rol esté cargado
+        if (!$this->relationLoaded('rol')) {
+            $this->load('rol');
+        }
+
         if (!$this->rol) {
             return collect([]);
         }
@@ -199,15 +216,24 @@ class Usuario extends Authenticatable
             $this->rol->load('permisos');
         }
 
-        return $this->rol->permisos;
+        // Asegurar que siempre devolvamos una colección válida
+        return $this->rol->permisos ?: collect([]);
     }
 
     /**
      * Obtener los slugs de permisos del usuario
+     * Retorna un array de strings con los slugs de los permisos
      */
     public function getPermisosSlugs()
     {
-        return $this->getPermisos()->pluck('slug')->toArray();
+        $permisos = $this->getPermisos();
+        
+        // Verificar que la colección no esté vacía
+        if ($permisos->isEmpty()) {
+            return [];
+        }
+        
+        return $permisos->pluck('slug')->filter()->values()->toArray();
     }
 
     /**
@@ -239,10 +265,16 @@ class Usuario extends Authenticatable
 
     /**
      * Verificar si el usuario puede acceder al dashboard
-     * Solo propietario y empleado pueden acceder al dashboard completo
+     * Puede acceder si es propietario, empleado, o tiene el permiso dashboard.ver
      */
     public function puedeAccederDashboard()
     {
-        return $this->isPropietario() || $this->isEmpleado();
+        // Propietario y empleado siempre tienen acceso
+        if ($this->isPropietario() || $this->isEmpleado()) {
+            return true;
+        }
+
+        // Verificar si tiene el permiso dashboard.ver
+        return $this->tienePermiso('dashboard.ver');
     }
 }

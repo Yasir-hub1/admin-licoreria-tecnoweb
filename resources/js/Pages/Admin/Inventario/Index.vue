@@ -192,9 +192,10 @@ import { usePermissions } from '@/composables/usePermissions';
 
 const { tienePermiso } = usePermissions();
 
-const puedeVerMovimientos = tienePermiso('inventario.ver');
-const puedeRegistrarMovimiento = tienePermiso('inventario.crear');
-const puedeVerKardex = tienePermiso('inventario.ver');
+// Hacer reactivos los permisos usando computed
+const puedeVerMovimientos = computed(() => tienePermiso('inventario.ver'));
+const puedeRegistrarMovimiento = computed(() => tienePermiso('inventario.crear'));
+const puedeVerKardex = computed(() => tienePermiso('inventario.ver'));
 
 const tipoMovimientoOptions = [
     { value: 'INGRESO', label: '➕ Ingreso (Aumentar stock)' },

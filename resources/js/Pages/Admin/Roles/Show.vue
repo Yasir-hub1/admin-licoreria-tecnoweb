@@ -110,7 +110,8 @@ const props = defineProps({
 
 const { tienePermiso } = usePermissions();
 
-const puedeEditar = tienePermiso('roles.editar');
+// Hacer reactivos los permisos usando computed
+const puedeEditar = computed(() => tienePermiso('roles.editar'));
 
 const permisosAgrupados = computed(() => {
     if (!props.rol.permisos || props.rol.permisos.length === 0) {

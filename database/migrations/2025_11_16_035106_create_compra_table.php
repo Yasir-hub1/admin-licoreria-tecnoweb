@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('compra', function (Blueprint $table) {
             $table->id();
             $table->string('nro_compra', 20)->nullable();
-            $table->string('descripcion', 20)->nullable();
+            $table->text('descripcion')->nullable();
             $table->foreignId('proveedor_id')->nullable()->constrained('proveedor');
             $table->date('fecha')->nullable();
         });

@@ -6,10 +6,12 @@ use App\Models\Credito;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-class CreditoController extends Controller
+class CreditoController extends BaseController
 {
     public function index()
     {
+        $this->verificarPermiso('creditos.listar');
+        
         $creditos = Credito::with(['venta.cliente'])->orderBy('id', 'desc')->paginate(15);
         return Inertia::render('Admin/Creditos/Index', [
             'creditos' => $creditos
@@ -71,6 +73,8 @@ class CreditoController extends Controller
 
     public function show(string $id)
     {
+        $this->verificarPermiso('creditos.ver');
+        
         $credito = Credito::with(['venta.cliente'])->findOrFail($id);
 
         // Cargar pagos ordenados por numero_cuota (campo directo y confiable)
@@ -127,6 +131,8 @@ class CreditoController extends Controller
 
     public function registrarPago(string $id, Request $request)
     {
+        $this->verificarPermiso('creditos.pagos');
+        
         $validated = $request->validate([
             'monto' => 'required|numeric|min:0',
             'metodo' => 'required|in:efectivo,qr',

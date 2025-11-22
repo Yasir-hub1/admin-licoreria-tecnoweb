@@ -131,6 +131,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { usePermissions } from '@/composables/usePermissions';
@@ -141,10 +142,11 @@ defineProps({
 
 const { tienePermiso } = usePermissions();
 
-const puedeCrear = tienePermiso('proveedores.crear');
-const puedeVer = tienePermiso('proveedores.ver');
-const puedeEditar = tienePermiso('proveedores.editar');
-const puedeEliminar = tienePermiso('proveedores.eliminar');
+// Hacer reactivos los permisos usando computed
+const puedeCrear = computed(() => tienePermiso('proveedores.crear'));
+const puedeVer = computed(() => tienePermiso('proveedores.ver'));
+const puedeEditar = computed(() => tienePermiso('proveedores.editar'));
+const puedeEliminar = computed(() => tienePermiso('proveedores.eliminar'));
 
 const deleteItem = (id) => {
     if(confirm('¿Está seguro de eliminar este proveedor?')) {

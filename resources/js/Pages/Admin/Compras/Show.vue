@@ -149,9 +149,10 @@ const props = defineProps({
 
 const { tienePermiso } = usePermissions();
 
-const puedeEditar = tienePermiso('compras.editar');
-const puedeValidar = tienePermiso('compras.validar');
-const puedeCancelar = tienePermiso('compras.cancelar');
+// Hacer reactivos los permisos usando computed
+const puedeEditar = computed(() => tienePermiso('compras.editar'));
+const puedeValidar = computed(() => tienePermiso('compras.validar'));
+const puedeCancelar = computed(() => tienePermiso('compras.cancelar'));
 
 // Calcular el total si no viene del backend o como respaldo
 const totalCompra = computed(() => {

@@ -257,9 +257,10 @@ const props = defineProps({
 
 const { tienePermiso } = usePermissions();
 
-const puedeEditar = tienePermiso('creditos.editar');
-const puedeRegistrarPago = tienePermiso('creditos.pagos');
-const puedeVerVenta = tienePermiso('ventas.ver');
+// Hacer reactivos los permisos usando computed
+const puedeEditar = computed(() => tienePermiso('creditos.editar'));
+const puedeRegistrarPago = computed(() => tienePermiso('creditos.pagos'));
+const puedeVerVenta = computed(() => tienePermiso('ventas.ver'));
 
 const showPaymentModal = ref(false);
 
