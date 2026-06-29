@@ -6,7 +6,7 @@
     RewriteEngine On
 
     # Establecer base para subdirectorio
-    RewriteBase /inf513/grupo12sa/proyecto2/public/
+    RewriteBase /inf513/grupo22sa/proyecto2/public/
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
