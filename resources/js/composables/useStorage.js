@@ -1,5 +1,8 @@
+import { usePage } from '@inertiajs/vue3';
+
 export function useStorage() {
-    const baseUrl = 'https://www.tecnoweb.org.bo/inf513/grupo22sa/proyecto2/public';
+    const page = usePage();
+    const baseUrl = (page.props.app?.url ?? window.location.origin).replace(/\/$/, '');
 
     // Función normal para productos, documentos, etc.
     const storageUrl = (path) => {

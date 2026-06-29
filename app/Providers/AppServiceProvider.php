@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\URL;  // ← Esta línea es CRÍTICA
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,16 +20,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Forzar esquema HTTPS
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
-        }
 
-        // Forzar URL raíz
-        URL::forceRootUrl('https://www.tecnoweb.org.bo/inf513/grupo12sa/proyecto2/public');
-                // Agregar esto para forzar URL de storage
-        \Illuminate\Support\Facades\URL::macro('storage', function ($path) {
-            return config('app.url') . '/storage/' . ltrim($path, '/');
-        });
+            if ($appUrl = config('app.url')) {
+                URL::forceRootUrl(rtrim($appUrl, '/'));
+            }
+        }
     }
 }

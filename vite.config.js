@@ -1,11 +1,14 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import vue from '@vitejs/plugin-vue';
 import path from 'path';
 
 export default defineConfig(({ mode }) => {
+    const env = loadEnv(mode, process.cwd(), '');
     const isProduction = mode === 'production';
+    const basePath = (env.VITE_BASE_PATH || '').replace(/\/$/, '');
+    const assetBase = basePath ? `${basePath}/build/` : '/build/';
 
     return {
         plugins: [
@@ -31,8 +34,7 @@ export default defineConfig(({ mode }) => {
                 'ziggy-js': path.resolve(__dirname, 'vendor/tightenco/ziggy/dist/index.js'),
             },
         },
-        // Cambiar a ruta relativa
-        base: './',  // Esto usa rutas relativas
+        base: assetBase,
 
         server: isProduction ? undefined : {
             host: '0.0.0.0',
