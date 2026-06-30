@@ -56,6 +56,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Asset URL
+    |--------------------------------------------------------------------------
+    |
+    | Solo la ruta del subdirectorio (sin https://). Evita CORS con módulos ES
+    | cuando el sitio se accede con/sin www. Ej: /inf513/grupo22sa/proyecto2/public
+    |
+    */
+
+    'asset_url' => env('ASSET_URL', env('APP_BASE_PATH')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
