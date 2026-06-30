@@ -6,8 +6,7 @@ import path from 'path';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
-    const isProduction = mode === 'production';
-    const basePath = (env.VITE_BASE_PATH || '').replace(/\/$/, '');
+    const basePath = (env.VITE_BASE_PATH || env.APP_BASE_PATH || '').replace(/\/$/, '');
     const assetBase = basePath ? `${basePath}/build/` : '/build/';
 
     return {
@@ -36,19 +35,15 @@ export default defineConfig(({ mode }) => {
         },
         base: assetBase,
 
-        server: isProduction ? undefined : {
+        server: mode === 'development' ? {
             host: '0.0.0.0',
             port: 5173,
             strictPort: false,
-            cors: {
-                origin: true,
-                credentials: true,
-            },
             hmr: {
                 host: 'localhost',
                 port: 5173,
             },
-        },
+        } : undefined,
 
         build: {
             manifest: true,

@@ -1,0 +1,1 @@
+import{q as a}from"./app-BDc_tfje.js";function l(){const t=(a().props.app?.url??window.location.origin).replace(/\/$/,"");return{storageUrl:e=>{if(!e)return"";const r=e.replace(/^\/+/,"");return`${t}/storage/${r}`},storageUrlSafe:e=>{if(!e)return"";let r=e.replace(/^\/+/,"");return r.startsWith("storage/")&&(r=r.substring(8)),`${t}/storage/${r}`}}}export{l as u};

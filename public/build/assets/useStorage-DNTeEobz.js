@@ -1,1 +1,0 @@
-function a(){const t="https://www.tecnoweb.org.bo/inf513/grupo12sa/proyecto2/public";return{storageUrl:e=>{if(!e)return"";const r=e.replace(/^\/+/,"");return`${t}/storage/${r}`},storageUrlSafe:e=>{if(!e)return"";let r=e.replace(/^\/+/,"");return r.startsWith("storage/")&&(r=r.substring(8)),`${t}/storage/${r}`}}}export{a as u};
