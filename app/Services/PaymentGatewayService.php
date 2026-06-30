@@ -23,7 +23,6 @@ class PaymentGatewayService
     private $callbackUrl;
     private $tokenService;
     private $tokenSecret;
-    private $paymentMethodId;
     private const CACHE_KEY_ACCESS_TOKEN = 'pagofacil_access_token';
     private const CACHE_KEY_TOKEN_EXPIRES = 'pagofacil_token_expires';
     private const CACHE_KEY_PAYMENT_METHOD_ID = 'pagofacil_payment_method_id';
@@ -119,87 +118,93 @@ class PaymentGatewayService
     }
 
     /**
-     * PASO 2: Listar métodos de pago habilitados y obtener paymentMethodId
-     * Según documentación oficial: /list-enabled-services
+     * Cabeceras comunes para endpoints protegidos de PagoFácil API v2.
      */
-    private function getPaymentMethodId()
+    private function getApiHeaders(string $accessToken): array
     {
-        // Verificar si hay paymentMethodId en cache
-        $paymentMethodId = Cache::get(self::CACHE_KEY_PAYMENT_METHOD_ID);
+        return [
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer ' . $accessToken,
+            'Response-Language' => 'es',
+        ];
+    }
 
-        if ($paymentMethodId) {
-            return $paymentMethodId;
+    /**
+     * PASO 2: Listar métodos de pago habilitados y obtener paymentMethodId.
+     * Manual v1.1.0: POST /list-enabled-services
+     */
+    private function getPaymentMethodId(bool $forceRefresh = false): int
+    {
+        if (!$forceRefresh) {
+            $cachedId = Cache::get(self::CACHE_KEY_PAYMENT_METHOD_ID);
+            if ($cachedId !== null) {
+                return (int) $cachedId;
+            }
+        }
+
+        $configuredId = env('PAGO_FACIL_PAYMENT_METHOD_ID');
+        if ($configuredId !== null && $configuredId !== '') {
+            return (int) $configuredId;
         }
 
         try {
-            // Obtener accessToken válido
             $accessToken = $this->getAccessToken();
-
-            $headers = [
-                'Content-Type' => 'application/json',
-                'Authorization' => 'Bearer ' . $accessToken
-            ];
 
             Log::info('Listando métodos de pago habilitados', ['url' => $this->url_list_methods]);
 
-            $response = $this->client_guzzle->get($this->url_list_methods, [
-                'headers' => $headers
+            $response = $this->client_guzzle->post($this->url_list_methods, [
+                'headers' => $this->getApiHeaders($accessToken),
             ]);
 
             $result = json_decode($response->getBody()->getContents());
 
-            if (isset($result->error) && $result->error == 1) {
-                throw new \Exception('Error al listar métodos: ' . ($result->message ?? 'Error desconocido'));
+            if (isset($result->error) && (int) $result->error === 1) {
+                throw new \Exception($result->message ?? 'Error al listar métodos de pago');
             }
 
-            // Buscar el método QR (generalmente el primero o el que tenga "QR" en el nombre)
+            if (!isset($result->values) || !is_array($result->values) || count($result->values) === 0) {
+                throw new \Exception('No hay métodos de pago QR habilitados para su comercio en PagoFácil.');
+            }
+
+            Log::info('Métodos QR habilitados recibidos', ['methods' => $result->values]);
+
             $paymentMethodId = null;
-            if (isset($result->values) && is_array($result->values)) {
-                foreach ($result->values as $method) {
-                    if (isset($method->paymentMethodName) &&
-                        (stripos($method->paymentMethodName, 'QR') !== false ||
-                         stripos($method->paymentMethodName, 'qr') !== false)) {
-                        $paymentMethodId = $method->paymentMethodId;
-                        Log::info('Método QR encontrado', [
-                            'paymentMethodId' => $paymentMethodId,
-                            'paymentMethodName' => $method->paymentMethodName ?? null
-                        ]);
-                        break;
-                    }
-                }
+            $paymentMethodName = null;
 
-                // Si no se encontró uno específico, usar el primero disponible
-                if (!$paymentMethodId && isset($result->values[0]->paymentMethodId)) {
-                    $paymentMethodId = $result->values[0]->paymentMethodId;
-                    Log::info('Usando primer método disponible', ['paymentMethodId' => $paymentMethodId]);
+            foreach ($result->values as $method) {
+                $name = $method->paymentMethodName ?? '';
+                if (stripos($name, 'QR') !== false) {
+                    $paymentMethodId = (int) $method->paymentMethodId;
+                    $paymentMethodName = $name;
+                    break;
                 }
             }
 
-            if (!$paymentMethodId) {
-                // Valor por defecto según documentación (4 = QR BNB, pero puede variar)
-                $paymentMethodId = env('PAGO_FACIL_PAYMENT_METHOD_ID', 4);
-                Log::warning('No se encontró paymentMethodId en respuesta, usando valor por defecto', [
-                    'paymentMethodId' => $paymentMethodId
-                ]);
+            if ($paymentMethodId === null) {
+                $paymentMethodId = (int) $result->values[0]->paymentMethodId;
+                $paymentMethodName = $result->values[0]->paymentMethodName ?? null;
             }
 
-            // Guardar en cache (24 horas)
+            Log::info('paymentMethodId seleccionado para generate-qr', [
+                'paymentMethodId' => $paymentMethodId,
+                'paymentMethodName' => $paymentMethodName,
+            ]);
+
             Cache::put(self::CACHE_KEY_PAYMENT_METHOD_ID, $paymentMethodId, 86400);
 
             return $paymentMethodId;
-
         } catch (\GuzzleHttp\Exception\RequestException $e) {
-            // Log::error('Error al listar métodos de pago', [
-            //     'message' => $e->getMessage(),
-            //     'response' => $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : null
-            // ]);
+            $responseBody = $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : null;
 
-            // Usar valor por defecto si falla
-            $paymentMethodId = env('PAGO_FACIL_PAYMENT_METHOD_ID', 4);
-            Log::warning('Usando paymentMethodId por defecto debido a error', [
-                'paymentMethodId' => $paymentMethodId
+            Log::error('Error al listar métodos de pago PagoFácil', [
+                'message' => $e->getMessage(),
+                'response' => $responseBody,
             ]);
-            return $paymentMethodId;
+
+            throw new \Exception(
+                'No se pudo obtener el método de pago habilitado en PagoFácil: ' .
+                ($responseBody ?: $e->getMessage())
+            );
         }
     }
 
@@ -495,21 +500,13 @@ class PaymentGatewayService
             // Obtener accessToken válido
             $accessToken = $this->getAccessToken();
 
-            $headers = [
-                'Content-Type' => 'application/json',
-                'Authorization' => 'Bearer ' . $accessToken
-            ];
+            $headers = $this->getApiHeaders($accessToken);
 
-            // Según documentación, podemos consultar por:
-            // - pagofacilTransactionId (transactionId de PagoFácil)
-            // - companyTransactionId (nuestro paymentNumber)
             $body = [];
 
             if ($pago->nro_transaccion) {
-                // Usar transactionId de PagoFácil si está disponible
                 $body['pagofacilTransactionId'] = $pago->nro_transaccion;
             } else {
-                // Usar nuestro paymentNumber (nro_pago)
                 $body['companyTransactionId'] = $pago->nro_pago;
             }
 
@@ -602,7 +599,7 @@ class PaymentGatewayService
      * PASO 3: Generar QR en la pasarela usando la nueva API v2
      * Según documentación oficial: /generate-qr
      */
-    private function generateQR(Pago $pago, $detalles, $cliente)
+    private function generateQR(Pago $pago, $detalles, $cliente, bool $retry = false)
     {
         // Preparar detalles de la orden según la nueva estructura
         $orderDetail = [];
@@ -621,38 +618,36 @@ class PaymentGatewayService
         // Obtener accessToken válido (se renueva automáticamente si es necesario)
         $accessToken = $this->getAccessToken();
 
-        // PASO 2: Obtener paymentMethodId (ID del método de pago habilitado)
-        $paymentMethodId = $this->getPaymentMethodId();
+        // PASO 2: Obtener paymentMethodId real del comercio (POST /list-enabled-services)
+        $paymentMethodId = $this->getPaymentMethodId($retry);
 
-        // Headers con Authorization Bearer usando el accessToken de PagoFacil
-        $headers = [
-            'Content-Type' => 'application/json',
-            'Authorization' => 'Bearer ' . $accessToken
-        ];
+        $headers = $this->getApiHeaders($accessToken);
 
         // Body según documentación oficial
         // paymentNumber = ID interno nuestro del pedido
         // callbackUrl = URL donde PagoFácil enviará el resultado del pago
         $body = [
-            "paymentMethod" => $paymentMethodId, // ID obtenido del list-enabled-services
+            "paymentMethod" => $paymentMethodId,
             "clientName" => $pago->nombre_persona,
             "documentType" => 1, // 1 = CI
             "documentId" => $pago->nit,
             "phoneNumber" => $pago->telefono,
             "email" => $pago->email ?? '',
-            "paymentNumber" => (string) $pago->nro_pago, // Nuestro ID interno
+            "paymentNumber" => (string) $pago->nro_pago,
             "amount" => (float) $pago->monto,
             "currency" => 2, // 2 = Bs (Bolivianos)
             "clientCode" => $this->clientCode,
-            "callbackUrl" => $this->callbackUrl, // URL donde recibiremos el callback
+            "callbackUrl" => $this->callbackUrl,
             "orderDetail" => $orderDetail
         ];
 
         Log::info('Generando QR con nueva API', [
             'url' => $this->url_qr,
+            'paymentMethod' => $paymentMethodId,
             'paymentNumber' => $pago->nro_pago,
             'amount' => $pago->monto,
-            'callbackUrl' => $this->callbackUrl
+            'callbackUrl' => $this->callbackUrl,
+            'retry' => $retry,
         ]);
 
         try {
@@ -671,11 +666,27 @@ class PaymentGatewayService
 
             return $result;
         } catch (\GuzzleHttp\Exception\RequestException $e) {
+            $responseBody = $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : null;
+
             Log::error('Error en petición a API QR', [
                 'message' => $e->getMessage(),
-                'response' => $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : null
+                'response' => $responseBody,
+                'paymentMethod' => $paymentMethodId,
             ]);
-            throw new \Exception('Error al comunicarse con la pasarela de pagos: ' . $e->getMessage());
+
+            if (
+                !$retry
+                && $responseBody
+                && stripos($responseBody, 'Payment Method ID') !== false
+            ) {
+                Cache::forget(self::CACHE_KEY_PAYMENT_METHOD_ID);
+                Log::warning('paymentMethodId inválido en caché, reintentando con list-enabled-services');
+
+                return $this->generateQR($pago, $detalles, $cliente, true);
+            }
+
+            $apiMessage = $responseBody ? (json_decode($responseBody)->message ?? $responseBody) : $e->getMessage();
+            throw new \Exception('Error al comunicarse con la pasarela de pagos: ' . $apiMessage);
         }
     }
 
