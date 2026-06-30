@@ -294,7 +294,7 @@ class PaymentGatewayService
                 if ($binaryData !== false && strlen($binaryData) > 0) {
                     $fileName = time() . '_' . $nroPago . '.png';
                     Storage::disk('public')->put('pagos/qr/' . $fileName, $binaryData, 'public');
-                    $pago->qr_image = Storage::url('pagos/qr/' . $fileName);
+                    $pago->qr_image = 'pagos/qr/' . $fileName;
                     Log::info('QR guardado exitosamente', ['file' => $fileName, 'size' => strlen($binaryData)]);
                 } else {
                     Log::warning('Error decodificando QR base64 o datos vacíos');

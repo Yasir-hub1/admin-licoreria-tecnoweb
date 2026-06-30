@@ -20,6 +20,12 @@ use App\Http\Controllers\CreditoController;
 use App\Http\Controllers\PagosController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\StorageFileController;
+
+// Archivos públicos (QR, imágenes, documentos) — compatible con hosting sin symlinks
+Route::get('/storage/{path}', [StorageFileController::class, 'show'])
+    ->where('path', '.*')
+    ->name('storage.local');
 
 // ====================================
 // RUTAS PÚBLICAS
