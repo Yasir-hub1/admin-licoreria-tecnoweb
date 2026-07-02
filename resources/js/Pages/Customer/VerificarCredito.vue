@@ -46,7 +46,7 @@
                     <div class="flex items-center gap-4">
                         <div v-if="preview.carnet_anverso || cliente.carnet_anverso" class="flex-1">
                             <img
-                                :src="preview.carnet_anverso || `/storage/${cliente.carnet_anverso}`"
+                                :src="preview.carnet_anverso || storageUrl(cliente.carnet_anverso)"
                                 alt="Carnet Anverso"
                                 class="w-full max-w-xs h-48 object-contain border rounded-lg bg-gray-50"
                             />
@@ -81,7 +81,7 @@
                     <div class="flex items-center gap-4">
                         <div v-if="preview.carnet_reverso || cliente.carnet_reverso" class="flex-1">
                             <img
-                                :src="preview.carnet_reverso || `/storage/${cliente.carnet_reverso}`"
+                                :src="preview.carnet_reverso || storageUrl(cliente.carnet_reverso)"
                                 alt="Carnet Reverso"
                                 class="w-full max-w-xs h-48 object-contain border rounded-lg bg-gray-50"
                             />
@@ -116,7 +116,7 @@
                     <div class="flex items-center gap-4">
                         <div v-if="preview.foto_luz || cliente.foto_luz" class="flex-1">
                             <img
-                                :src="preview.foto_luz || `/storage/${cliente.foto_luz}`"
+                                :src="preview.foto_luz || storageUrl(cliente.foto_luz)"
                                 alt="Factura de Luz"
                                 class="w-full max-w-xs h-48 object-contain border rounded-lg bg-gray-50"
                             />
@@ -151,7 +151,7 @@
                     <div class="flex items-center gap-4">
                         <div v-if="preview.foto_agua || cliente.foto_agua" class="flex-1">
                             <img
-                                :src="preview.foto_agua || `/storage/${cliente.foto_agua}`"
+                                :src="preview.foto_agua || storageUrl(cliente.foto_agua)"
                                 alt="Factura de Agua"
                                 class="w-full max-w-xs h-48 object-contain border rounded-lg bg-gray-50"
                             />

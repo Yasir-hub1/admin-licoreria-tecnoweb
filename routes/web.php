@@ -27,6 +27,11 @@ Route::get('/storage/{path}', [StorageFileController::class, 'show'])
     ->where('path', '.*')
     ->name('storage.local');
 
+// Endpoint alterno para evitar bloqueos 403 en hosting compartido
+Route::get('/files/{path}', [StorageFileController::class, 'show'])
+    ->where('path', '.*')
+    ->name('files.public');
+
 // ====================================
 // RUTAS PÚBLICAS
 // ====================================
