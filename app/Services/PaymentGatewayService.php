@@ -210,11 +210,16 @@ class PaymentGatewayService
 
     /**
      * Procesar pago con pasarela QR
+     *
+     * @param  float|null  $monto  Monto a cobrar (ej. primera cuota). Si es null, usa monto_total de la venta.
+     * @param  string|null  $descripcionCuota  Descripción para orderDetail cuando el monto es de una cuota.
      */
-    public function processQRPayment(Venta $venta, $cliente)
+    public function processQRPayment(Venta $venta, $cliente, ?float $monto = null, ?string $descripcionCuota = null)
     {
         DB::beginTransaction();
         try {
+            $montoPago = $monto ?? (float) $venta->monto_total;
+
             // Generar número de pago único
             $nroPago = $this->generateNroPago();
 
@@ -229,7 +234,7 @@ class PaymentGatewayService
                 'nro_pago' => $nroPago,
                 'tipo_pago' => 'qr',
                 'estado' => 'procesando',
-                'monto' => $venta->monto_total,
+                'monto' => $montoPago,
                 'nombre_persona' => $cliente->nombre,
                 'email' => $cliente->usuario->email ?? null,
                 'telefono' => $cliente->telefono,
@@ -237,8 +242,10 @@ class PaymentGatewayService
                 'fecha_pago' => now()
             ]);
 
-            // Preparar detalles del pago
-            $detalles = $this->preparePaymentDetails($venta);
+            // Preparar detalles del pago (cuota: un solo ítem con el monto exacto del QR)
+            $detalles = $descripcionCuota
+                ? $this->prepareCuotaPaymentDetails($montoPago, $descripcionCuota)
+                : $this->preparePaymentDetails($venta);
 
             // Generar QR
             $result = $this->generateQR($pago, $detalles, $cliente);
@@ -688,6 +695,19 @@ class PaymentGatewayService
             $apiMessage = $responseBody ? (json_decode($responseBody)->message ?? $responseBody) : $e->getMessage();
             throw new \Exception('Error al comunicarse con la pasarela de pagos: ' . $apiMessage);
         }
+    }
+
+    /**
+     * Detalle de pago para una cuota (monto debe coincidir con amount del QR).
+     */
+    private function prepareCuotaPaymentDetails(float $monto, string $descripcion): array
+    {
+        return [[
+            'producto' => $descripcion,
+            'cantidad' => 1,
+            'precio' => $monto,
+            'total' => $monto,
+        ]];
     }
 
     /**

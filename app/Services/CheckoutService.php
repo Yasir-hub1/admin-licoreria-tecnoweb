@@ -131,8 +131,31 @@ class CheckoutService
             $pago = null;
 
             if ($metodoPago === 'qr') {
-                $resultadoPago = $paymentGatewayService->processQRPayment($venta, $cliente);
+                $primeraCuota = \App\Models\Pagos::where('credito_id', $credito->id)
+                    ->whereNull('fecha_pago')
+                    ->orderBy('numero_cuota', 'asc')
+                    ->first();
+
+                $montoCuota = $primeraCuota
+                    ? (float) $primeraCuota->monto
+                    : round((float) $venta->monto_total / $cuotas, 2);
+
+                $descripcionCuota = $primeraCuota
+                    ? "Cuota {$primeraCuota->numero_cuota} de {$cuotas}"
+                    : "Primera cuota de crédito";
+
+                $resultadoPago = $paymentGatewayService->processQRPayment(
+                    $venta,
+                    $cliente,
+                    $montoCuota,
+                    $descripcionCuota
+                );
                 $pago = $resultadoPago['pago'];
+
+                if ($primeraCuota) {
+                    $primeraCuota->pago_id = $pago->id;
+                    $primeraCuota->save();
+                }
             } else {
                 // Para crédito, el pago se registra pero no se completa hasta pagar cuotas
                 $pago = $paymentGatewayService->processCashPayment($venta, $cliente);

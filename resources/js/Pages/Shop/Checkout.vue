@@ -132,6 +132,15 @@
                         option-label="label"
                     />
 
+                    <p
+                        v-if="form.tipo_pago === 'credito' && form.metodo_pago === 'qr' && form.numero_cuotas"
+                        class="mt-3 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3"
+                    >
+                        El QR se generará por la <strong>primera cuota</strong>:
+                        Bs. {{ montoPrimeraCuota }}
+                        (total Bs. {{ Number(cart.total || 0).toFixed(2) }} en {{ form.numero_cuotas }} cuotas).
+                    </p>
+
                     <!-- Botones -->
                     <div class="flex gap-4 pt-4">
                         <Link :href="route('cart.index')" class="flex-1">
@@ -229,6 +238,14 @@ const form = useForm({
     tipo_pago: 'contado',
     metodo_pago: '',
     numero_cuotas: null
+});
+
+const montoPrimeraCuota = computed(() => {
+    if (!props.cart?.total || !form.numero_cuotas) {
+        return '0.00';
+    }
+
+    return (Number(props.cart.total) / Number(form.numero_cuotas)).toFixed(2);
 });
 
 // Watch para limpiar numero_cuotas cuando cambia el tipo de pago
