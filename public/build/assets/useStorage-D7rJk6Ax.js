@@ -1,1 +1,0 @@
-import{q as n}from"./app-DTfF4-oe.js";function c(){const t=(n().props.app?.url??window.location.origin).replace(/\/$/,""),a=e=>{if(!e)return"";let r=e.replace(/^\/+/,"");return r.startsWith("storage/")&&(r=r.substring(8)),r};return{storageUrl:e=>{const r=a(e);return r?`${t}/files/${r}`:""},storageUrlSafe:e=>{const r=a(e);return r?`${t}/files/${r}`:""}}}export{c as u};
